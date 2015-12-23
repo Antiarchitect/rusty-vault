@@ -10,15 +10,15 @@ const TAG_LENGTH: usize = 16;
 const KEY_LENGTH: usize = 32;
 const IV_LENGTH: usize = 12;
 
-pub struct AeadKey {
-  pub key: Box<[u8]>,
-  pub iv: Box<[u8]>
-}
-
 pub struct EncryptionResult {
   pub key: AeadKey,
   pub ciphertext: Box<Vec<u8>>,
   pub tag: Box<[u8]>
+}
+
+pub struct AeadKey {
+  pub key: Box<[u8]>,
+  pub iv: Box<[u8]>
 }
 
 pub fn encrypt(auth_data: &[u8], plaintext: &[u8]) -> EncryptionResult {

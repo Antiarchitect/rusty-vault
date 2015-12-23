@@ -1,5 +1,3 @@
-mod filesystem;
-
 trait StorableData {
     fn id() -> String;
 }

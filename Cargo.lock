@@ -4,6 +4,7 @@ version = "0.1.0"
 dependencies = [
  "rand 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "rust-crypto 0.2.34 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rusty-vault-storage-filesystem 0.1.0",
 ]
 
 [[package]]
@@ -69,6 +70,10 @@ dependencies = [
 name = "rustc-serialize"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "rusty-vault-storage-filesystem"
+version = "0.1.0"
 
 [[package]]
 name = "time"

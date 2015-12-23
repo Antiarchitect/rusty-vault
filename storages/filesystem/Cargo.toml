@@ -1,0 +1,7 @@
+[package]
+name = "rusty-vault-storage-filesystem"
+version = "0.1.0"
+authors = ["Andrey Voronkov <voronkovaa@gmail.com>"]
+
+[lib]
+name = "storage_filesystem"
