@@ -1,28 +1,31 @@
 mod filesystem;
 
 trait StorableData {
-    fn id() -> self::Id;
+    fn id() -> String;
 }
 
 trait StorableKey {
-    fn id() -> self::Id;
+    fn id() -> String;
 }
 
 trait StorableMap {
-    fn id() -> self::Id;
+    fn id() -> String;
 }
 
-pub trait DataStorage {
+trait DataStorage {
+    fn new(String) -> Self;
     fn dump(StorableData) -> Result;
     fn load(StorableData::Id) -> StorableData;
 }
 
 trait KeysStorage {
+    fn new(String) -> Self;
     fn dump(StorableKey) -> Result;
     fn load(StorableKey::Id) -> StorableKey;
 }
 
 trait MapsStorage {
+    fn new(String) -> Self;
     fn dump(StorableMap) -> Result;
     fn load(StorableMap::Id) -> StorableMap;
 }
