@@ -1,12 +1,11 @@
-struct Config {
-    path: Path
-}
+use std::path::Path;
+use std::fs::create_dir_all;
+use storage::DataStorage;
 
-impl DataStorage for Config {
+impl DataStorage {
 
     fn new(path: String) -> Self {
-        let fspath = FsPath::from(path);
-        create_dir_all(fspath);
+        super::create_path(String)
     }
 
     fn dump(data: StorableData) -> Result {

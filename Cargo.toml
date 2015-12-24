@@ -6,5 +6,3 @@ authors = ["Andrey Voronkov <voronkovaa@gmail.com>"]
 [dependencies]
 rust-crypto = "*"
 rand = "*"
-
-rusty-vault-storage-filesystem = { path = "storages/filesystem" }

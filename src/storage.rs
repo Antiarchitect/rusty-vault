@@ -10,7 +10,7 @@ trait StorableMap {
     fn id() -> String;
 }
 
-trait DataStorage {
+pub trait DataStorage {
     fn new(String) -> Self;
     fn dump(StorableData) -> Result;
     fn load(StorableData::Id) -> StorableData;
