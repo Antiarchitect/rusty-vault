@@ -1,6 +1,13 @@
 mod crypt;
+mod storages {
+    mod filesystem {
+        mod data;
+        mod keys;
+        mod maps;
+    }
+}
 
-use storages::filesystem::data as DataStorage;
+use self::storages::filesystem as Storage;
 
 fn main() {
     let external_id = "e338c3d0-855c-4103-b427-585148b9da34".to_string().into_bytes();

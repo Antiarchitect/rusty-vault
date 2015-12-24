@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::fs::create_dir_all;
-use storage::DataStorage;
+use super::super::DataStorage;
 
 impl DataStorage {
 
