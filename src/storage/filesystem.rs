@@ -1,17 +1,16 @@
-use super::super::DataStorage;
-use super::super::StorableData;
-use super::super::StorableDataId;
+use std::fs::create_dir_all;
+use std::path::Path
 
 pub struct Data;
 
 impl DataStorage for Data {
 
     fn new(path: String) -> Self {
-        super::create_path(path)
+        create_dir_all(Path::from(path));
     }
 
     fn dump(data: StorableData) -> Result {
-        Ok
+        
     }
 
     fn load(id: StorableDataId) {

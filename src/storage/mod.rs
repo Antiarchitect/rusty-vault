@@ -1,16 +1,24 @@
 extern crate uuid;
 use self::uuid::Uuid;
 
-trait StorableData {
-    fn id() -> Uuid;
+pub struct Storable {
+    key: StorableKey,
+    data: StorableData,
+    map: StorableMap
 }
 
-trait StorableKey {
-    fn id() -> Uuid;
+pub struct StorableData {
+    id: Uuid,
+    payload: Json
 }
 
-trait StorableMap {
-    fn id() -> String;
+pub struct StorableKey {
+    id: Uuid,
+    payload: Json
+}
+
+pub struct StorableMap {
+    id: String
 }
 
 pub trait DataStorage {
