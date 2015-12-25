@@ -1,4 +1,9 @@
+mod filesystem;
+extern crate rustc_serialize;
 extern crate uuid;
+
+use std::path::Path;
+use self::rustc_serialize::json;
 use self::uuid::Uuid;
 
 pub struct Storable {
@@ -9,12 +14,12 @@ pub struct Storable {
 
 pub struct StorableData {
     id: Uuid,
-    payload: Json
+    payload: json::Json
 }
 
 pub struct StorableKey {
     id: Uuid,
-    payload: Json
+    payload: json::Json
 }
 
 pub struct StorableMap {
@@ -22,9 +27,9 @@ pub struct StorableMap {
 }
 
 pub trait DataStorage {
-    fn new(String) -> Self;
+    fn new<T: AsRef<Path>>(T) -> Self;
     fn dump(StorableData) -> Result<Uuid, &'static str>;
-    fn load(String) -> Result<StorableData, &'static str>;
+    fn load(Uuid) -> Result<StorableData, &'static str>;
 }
 
 trait KeysStorage {
@@ -36,5 +41,5 @@ trait KeysStorage {
 trait MapsStorage {
     fn new(String) -> Self;
     fn dump(StorableMap) -> Result<(), &'static str>;
-    fn load(Uuid) -> Result<StorableMap, &'static str>;
+    fn load(String) -> Result<StorableMap, &'static str>;
 }
