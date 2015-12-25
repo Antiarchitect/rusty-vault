@@ -8,7 +8,7 @@ impl DataStorage for Data {
 
     }
 
-    fn dump(data: StorableData) -> Result {
+    fn dump(data: StorableData) -> Result<(), &'static str> {
 
     }
 

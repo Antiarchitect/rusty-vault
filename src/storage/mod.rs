@@ -12,6 +12,12 @@ pub struct Storable {
     map: StorableMap
 }
 
+pub struct StorageConfig {
+    data: DataStorageConfig,
+    keys: KeysStorageConfig,
+    maps: MapsStorageConfig
+}
+
 pub struct StorableData {
     id: Uuid,
     payload: json::Json
@@ -26,8 +32,14 @@ pub struct StorableMap {
     id: String
 }
 
+pub trait Storage {
+    fn new(StorageConfig) -> Self;
+    fn dump(Storable) -> Result<Uuid, &'static str>;
+    fn load(Uuid) -> Result<StorableData, &'static str>;
+}
+
 pub trait DataStorage {
-    fn new<T: AsRef<Path>>(T) -> Self;
+    fn new() -> Self;
     fn dump(StorableData) -> Result<Uuid, &'static str>;
     fn load(Uuid) -> Result<StorableData, &'static str>;
 }
