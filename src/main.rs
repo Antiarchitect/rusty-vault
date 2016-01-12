@@ -9,7 +9,8 @@ const USAGE: &'static str = "
 Rusty Vault.
 
 Usage:
-  rusty_vault <externalid> <datastring>
+  rusty_vault <external-id> <data-string>
+  rusty_vault <external-id>
   rusty_vault --version
 
 Options:
@@ -19,8 +20,8 @@ Options:
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
-    arg_externalid: String,
-    arg_datastring: Option<String>
+    arg_external_id: String,
+    arg_data_string: Option<String>
 }
 
 fn main() {
@@ -28,8 +29,8 @@ fn main() {
                             .and_then( |d| d.decode() )
                             .unwrap_or_else( |e| e.exit() );
 
-    let external_id = args.arg_externalid;
-    let data_string = args.arg_datastring;
+    let external_id = args.arg_external_id;
+    let data_string = args.arg_data_string;
 
     match data_string {
         Some(value) => dump(external_id, value.into_bytes()),
