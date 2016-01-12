@@ -1,7 +1,4 @@
-mod crypt;
-mod storage;
-
-use storage::filesystem as current_storage;
+extern crate rusty_vault;
 
 fn main() {
     let external_id = "e338c3d0-855c-4103-b427-585148b9da34".to_string().into_bytes();
