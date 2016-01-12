@@ -1,4 +1,5 @@
 extern crate docopt;
+extern crate rustc_serialize;
 extern crate rusty_vault;
 
 use docopt::Docopt;
@@ -27,27 +28,21 @@ fn main() {
                             .and_then( |d| d.decode() )
                             .unwrap_or_else( |e| e.exit() );
 
-    let external_id = args.external_id;
-    let data_string = args.data_string;
+    let external_id = args.arg_external_id;
+    let data_string = args.arg_data_string;
 
     match data_string {
-        Some(value) => dump(&external_id, &value.into_bytes()),
+        Some(value) => dump(external_id, value.into_bytes()),
         None => load(&external_id)
-    });
+    }
 }
 
-fn dump(external_id: &String, data: &[u8]) {
+fn dump(external_id: String, data: Vec<u8>) {
     let result = vault::dump(external_id, data);
-    println!("Iv: {:?}", result.key.iv);
-    println!("Key: {:?}", result.key.key);
     println!("Ciphertext: {:?}", result.ciphertext);
-    println!("Tag: {:?}", result.tag);
 }
 
 fn load(external_id: &String) {
     let result = vault::load(external_id);
-    println!("Iv: {:?}", result.key.iv);
-    println!("Key: {:?}", result.key.key);
-    println!("Ciphertext: {:?}", result.ciphertext);
-    println!("Tag: {:?}", result.tag);
+    println!("Data: {:?}", result.data);
 }
