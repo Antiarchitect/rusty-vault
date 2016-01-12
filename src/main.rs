@@ -1,15 +1,51 @@
+extern crate docopt;
 extern crate rusty_vault;
 
+use docopt::Docopt;
+use rusty_vault as vault;
+
+const USAGE: &'static str = "
+Rusty Vault.
+
+Usage:
+  rusty_vault <external_id> <data_string>
+  rusty_vault --version
+
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+";
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+    arg_external_id: String,
+    arg_data_string: Option<String>
+}
+
 fn main() {
-    let external_id = "e338c3d0-855c-4103-b427-585148b9da34".to_string().into_bytes();
-    let data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".to_string().into_bytes();
+    let args: Args = Docopt::new(USAGE)
+                            .and_then( |d| d.decode() )
+                            .unwrap_or_else( |e| e.exit() );
 
-    let data_storage = current_storage::Data.new("./data");
-    // let keys_storage = Storage::KeysStorage.new("./keys");
-    // let maps_storage = Storage::MapsStorage.new("./maps");
+    let external_id = args.external_id;
+    let data_string = args.data_string;
 
-    let result = crypt::encrypt(&external_id, &data);
+    match data_string {
+        Some(value) => dump(&external_id, &value.into_bytes()),
+        None => load(&external_id)
+    });
+}
 
+fn dump(external_id: &String, data: &[u8]) {
+    let result = vault::dump(external_id, data);
+    println!("Iv: {:?}", result.key.iv);
+    println!("Key: {:?}", result.key.key);
+    println!("Ciphertext: {:?}", result.ciphertext);
+    println!("Tag: {:?}", result.tag);
+}
+
+fn load(external_id: &String) {
+    let result = vault::load(external_id);
     println!("Iv: {:?}", result.key.iv);
     println!("Key: {:?}", result.key.key);
     println!("Ciphertext: {:?}", result.ciphertext);
