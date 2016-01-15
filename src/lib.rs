@@ -1,7 +1,7 @@
 mod crypt;
-// mod storage;
-//
-// use storage::filesystem as current_storage;
+mod storage;
+
+use storage as current_storage;
 
 pub fn dump(external_id: String, data: Vec<u8>) -> crypt::EncryptionResult {
     crypt::encrypt(&external_id.into_bytes(), &data)

@@ -1,4 +1,3 @@
-mod filesystem;
 extern crate rustc_serialize;
 extern crate uuid;
 
@@ -12,10 +11,22 @@ pub struct Storable {
     map: StorableMap
 }
 
-pub struct StorageConfig {
-    data: DataStorageConfig,
-    keys: KeysStorageConfig,
-    maps: MapsStorageConfig
+pub struct KeysStorageConfig {
+    path: Path
+}
+
+pub struct DataStorageConfig {
+    path: Path
+}
+
+pub struct MapsStorageConfig {
+    path: Path
+}
+
+pub struct StorageConfig<'a> {
+    data: &'a DataStorageConfig,
+    keys: &'a KeysStorageConfig,
+    maps: &'a MapsStorageConfig
 }
 
 pub struct StorableData {
