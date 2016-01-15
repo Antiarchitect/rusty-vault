@@ -39,8 +39,7 @@ fn main() {
 }
 
 fn dump(external_id: String, data: Vec<u8>) {
-    let result = vault::dump(external_id, data);
-    println!("Ciphertext: {:?}", result.ciphertext);
+    vault::dump(external_id, data).unwrap()
 }
 
 fn load(external_id: &String) {
