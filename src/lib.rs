@@ -29,8 +29,7 @@ struct StorableMap {
     data_id: Uuid
 }
 
-pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), &'static str>  {
-
+pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     let data_path = "/home/andrey/Documents/storages/data".to_string();
     let keys_path = "/home/andrey/Documents/storages/keys".to_string();
     let maps_path = "/home/andrey/Documents/storages/maps".to_string();
@@ -42,36 +41,36 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), &'static str>  {
     store_map(maps_path, StorableMap { external_id: Uuid::parse_str(&external_id).unwrap(), key_id: key_id, data_id: data_id})
 }
 
-fn store_data(path_prefix: String, storable: StorableData) -> Result<Uuid, &'static str> {
+fn store_data(path_prefix: String, storable: StorableData) -> Result<Uuid, String> {
     let id = Uuid::new_v4();
     let encoded_storable = json::encode(&storable).unwrap();
 
     let mut file = File::create(Path::new(&format!("{}/{}.json", path_prefix, id.to_string()))).ok().expect("Cannot create file");
     match file.write_all(encoded_storable.as_bytes()) {
         Ok(_) => Ok(id),
-        Err(error) => Err("fucked")
+        Err(error) => Err(format!("Error: {}", error))
     }
 }
 
-fn store_key(path_prefix: String, storable: StorableKey) -> Result<Uuid, &'static str> {
+fn store_key(path_prefix: String, storable: StorableKey) -> Result<Uuid, String> {
     let id = Uuid::new_v4();
     let encoded_storable = json::encode(&storable).unwrap();
 
     let mut file = File::create(Path::new(&format!("{}/{}.json", path_prefix, id.to_string()))).ok().expect("Cannot create file");
     match file.write_all(encoded_storable.as_bytes()) {
         Ok(_) => Ok(id),
-        Err(error) => Err("fucked")
+        Err(error) => Err(format!("Error: {}", error))
     }
 }
 
-fn store_map(path_prefix: String, storable: StorableMap) -> Result<(), &'static str> {
+fn store_map(path_prefix: String, storable: StorableMap) -> Result<(), String> {
     let id = Uuid::new_v4();
     let encoded_storable = json::encode(&storable).unwrap();
 
     let mut file = File::create(Path::new(&format!("{}/{}.json", path_prefix, id.to_string()))).ok().expect("Cannot create file");
     match file.write_all(encoded_storable.as_bytes()) {
         Ok(_) => Ok(()),
-        Err(error) => Err("fucked")
+        Err(error) => Err(format!("Error: {}", error))
     }
 }
 
