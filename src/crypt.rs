@@ -11,14 +11,10 @@ const KEY_LENGTH: usize = 32;
 const IV_LENGTH: usize = 12;
 
 pub struct EncryptionResult {
-  pub key: AeadKey,
-  pub ciphertext: Box<Vec<u8>>,
-  pub tag: Box<[u8]>
-}
-
-pub struct AeadKey {
   pub key: Box<[u8]>,
-  pub iv: Box<[u8]>
+  pub iv: Box<[u8]>,
+  pub ciphertext: Vec<u8>,
+  pub tag: Box<[u8]>
 }
 
 pub fn encrypt(auth_data: &[u8], plaintext: &[u8]) -> EncryptionResult {
@@ -39,7 +35,5 @@ pub fn encrypt(auth_data: &[u8], plaintext: &[u8]) -> EncryptionResult {
 
 	cipher.encrypt(plaintext, &mut ciphertext, &mut tag);
 
-	let aead_key = AeadKey { key: Box::new(key), iv: Box::new(iv) };
-
-	return EncryptionResult { key: aead_key, ciphertext: Box::new(ciphertext), tag: Box::new(tag) };
+	return EncryptionResult { key: Box::new(key), iv: Box::new(iv), ciphertext: ciphertext, tag: Box::new(tag) };
 }

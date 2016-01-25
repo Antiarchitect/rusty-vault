@@ -19,14 +19,14 @@ struct StorableKey {
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct StorableData {
-    ciphertext: Box<Vec<u8>>
+    ciphertext: Vec<u8>
 }
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct StorableMap {
-    external_id: Uuid,
     key_id: Uuid,
-    data_id: Uuid
+    data_id: Uuid,
+    tag: Box<[u8]>
 }
 
 pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
@@ -36,9 +36,10 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
 
     let result = crypt::encrypt(external_id.as_bytes(), &data);
 
-    let key_id = store_key(keys_path, StorableKey { key: result.key.key, iv: result.key.iv }).unwrap();
+    let key_id = store_key(keys_path, StorableKey { key: result.key, iv: result.iv }).unwrap();
     let data_id = store_data(data_path, StorableData { ciphertext: result.ciphertext }).unwrap();
-    store_map(maps_path, StorableMap { external_id: Uuid::parse_str(&external_id).unwrap(), key_id: key_id, data_id: data_id})
+    let external_uuid = Uuid::parse_str(&external_id).unwrap();
+    store_map(maps_path, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
 }
 
 fn store_data(path_prefix: String, storable: StorableData) -> Result<Uuid, String> {
