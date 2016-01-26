@@ -11,6 +11,10 @@ use uuid::Uuid;
 use std::io::prelude::*;
 use std::fs;
 
+const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
+const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
+const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
+
 #[derive(RustcDecodable, RustcEncodable)]
 struct StorableKey {
     key: Box<[u8]>,
@@ -30,16 +34,13 @@ struct StorableMap {
 }
 
 pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
-    let data_path = "/home/andrey/Documents/storages/data".to_string();
-    let keys_path = "/home/andrey/Documents/storages/keys".to_string();
-    let maps_path = "/home/andrey/Documents/storages/maps".to_string();
 
     let result = crypt::encrypt(external_id.as_bytes(), &data);
 
-    let key_id = store_key(keys_path, StorableKey { key: result.key, iv: result.iv }).unwrap();
-    let data_id = store_data(data_path, StorableData { ciphertext: result.ciphertext }).unwrap();
+    let key_id = store_key(KEYS_PATH.to_string(), StorableKey { key: result.key, iv: result.iv }).unwrap();
+    let data_id = store_data(DATA_PATH.to_string(), StorableData { ciphertext: result.ciphertext }).unwrap();
     let external_uuid = Uuid::parse_str(&external_id).unwrap();
-    store_map(maps_path, external_uuid, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
+    store_map(MAPS_PATH.to_string(), external_uuid, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
 }
 
 fn prepare_full_path(path_prefix: &String, path_key_string: &String) -> String {
@@ -51,9 +52,7 @@ fn prepare_full_path(path_prefix: &String, path_key_string: &String) -> String {
 
 fn store_json_string(path_prefix: String, path_key: Uuid, json: String) -> Result<(), String> {
     let full_path = prepare_full_path(&path_prefix, &path_key.to_simple_string());
-
     fs::create_dir_all(&full_path).ok();
-
     let mut file = fs::File::create(Path::new(&format!("{}/{}.json", full_path, path_key.to_string()))).ok().expect("Cannot create file");
     match file.write_all(json.as_bytes()) {
         Ok(_) => Ok(()),
@@ -83,5 +82,6 @@ fn store_map(path_prefix: String, external_id: Uuid, storable: StorableMap) -> R
 }
 
 pub fn load(external_id: &String) -> Vec<u8> {
+    let maps_path = prepare_full_path(&MAPS_PATH.to_string(), external_id);
     vec![0]
 }
