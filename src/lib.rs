@@ -42,12 +42,15 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     store_map(maps_path, external_uuid, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
 }
 
-fn store_json_string(path_prefix: String, path_key: Uuid, json: String) -> Result<(), String> {
-    let path_key_string = path_key.to_simple_string();
+fn prepare_full_path(path_prefix: &String, path_key_string: &String) -> String {
     let path_key_chars = path_key_string.chars();
     let first_suffix = path_key_chars.clone().take(2).collect::<String>();
     let second_suffix = path_key_chars.clone().skip(2).take(2).collect::<String>();
-    let full_path = format!("{}/{}/{}", path_prefix, first_suffix, second_suffix);
+    format!("{}/{}/{}", path_prefix, first_suffix, second_suffix)
+}
+
+fn store_json_string(path_prefix: String, path_key: Uuid, json: String) -> Result<(), String> {
+    let full_path = prepare_full_path(&path_prefix, &path_key.to_simple_string());
 
     fs::create_dir_all(&full_path).ok();
 
@@ -79,21 +82,6 @@ fn store_map(path_prefix: String, external_id: Uuid, storable: StorableMap) -> R
     Ok(())
 }
 
-pub struct LoadResult {
-    pub data: Vec<u8>
-}
-
-trait FakeLoadResult {
-    fn new(data: &'static str) -> Self;
-    fn data(&self) -> Vec<u8> { self.data() }
-}
-
-impl FakeLoadResult for LoadResult {
-    fn new(data: &'static str) -> LoadResult {
-        LoadResult { data: data.to_string().into_bytes() }
-    }
-}
-
-pub fn load(external_id: &String) -> LoadResult {
-    LoadResult::new("fakevalue")
+pub fn load(external_id: &String) -> Vec<u8> {
+    vec![0]
 }

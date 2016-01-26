@@ -44,5 +44,5 @@ fn dump(external_id: String, data: Vec<u8>) {
 
 fn load(external_id: &String) {
     let result = vault::load(external_id);
-    println!("Data: {:?}", result.data);
+    println!("Data: {:?}", result);
 }
