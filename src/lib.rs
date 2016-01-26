@@ -9,7 +9,7 @@ extern crate uuid;
 use uuid::Uuid;
 
 use std::io::prelude::*;
-use std::fs::File;
+use std::fs;
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct StorableKey {
@@ -43,7 +43,15 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
 }
 
 fn store_json_string(path_prefix: String, path_key: Uuid, json: String) -> Result<(), String> {
-    let mut file = File::create(Path::new(&format!("{}/{}.json", path_prefix, path_key.to_string()))).ok().expect("Cannot create file");
+    let path_key_string = path_key.to_simple_string();
+    let path_key_chars = path_key_string.chars();
+    let first_suffix = path_key_chars.clone().take(2).collect::<String>();
+    let second_suffix = path_key_chars.clone().skip(2).take(2).collect::<String>();
+    let full_path = format!("{}/{}/{}", path_prefix, first_suffix, second_suffix);
+
+    fs::create_dir_all(&full_path).ok();
+
+    let mut file = fs::File::create(Path::new(&format!("{}/{}.json", full_path, path_key.to_string()))).ok().expect("Cannot create file");
     match file.write_all(json.as_bytes()) {
         Ok(_) => Ok(()),
         Err(error) => Err(format!("Error: {}", error))
