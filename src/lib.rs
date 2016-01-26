@@ -34,7 +34,6 @@ struct StorableMap {
 }
 
 pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
-
     let result = crypt::encrypt(external_id.as_bytes(), &data);
 
     let key_id = store_key(KEYS_PATH.to_string(), StorableKey { key: result.key, iv: result.iv }).unwrap();
@@ -44,10 +43,7 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
 }
 
 fn prepare_full_path(path_prefix: &String, path_key_string: &String) -> String {
-    let path_key_chars = path_key_string.chars();
-    let first_suffix = path_key_chars.clone().take(2).collect::<String>();
-    let second_suffix = path_key_chars.clone().skip(2).take(2).collect::<String>();
-    format!("{}/{}/{}", path_prefix, first_suffix, second_suffix)
+    format!("{}/{}/{}/{}", path_prefix, path_key_string[0..2].to_string(), path_key_string[2..4].to_string(), path_key_string[4..6].to_string())
 }
 
 fn store_json_string(path_prefix: String, path_key: Uuid, json: String) -> Result<(), String> {
