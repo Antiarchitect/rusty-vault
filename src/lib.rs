@@ -1,7 +1,5 @@
 mod crypt;
 
-use std::path::Path;
-
 extern crate rustc_serialize;
 use rustc_serialize::json;
 
@@ -10,6 +8,7 @@ use uuid::Uuid;
 
 use std::io::prelude::*;
 use std::fs;
+use std::path;
 
 const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
 const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
@@ -42,14 +41,25 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     store_map(MAPS_PATH.to_string(), external_uuid, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
 }
 
-fn prepare_full_path(path_prefix: &String, path_key_string: &String) -> String {
-    format!("{}/{}/{}/{}", path_prefix, path_key_string[0..2].to_string(), path_key_string[2..4].to_string(), path_key_string[4..6].to_string())
+fn construct_store_path(path_prefix: &String, path_key_string: &String) -> path::PathBuf {
+    let mut path = path::PathBuf::from(path_prefix);
+    path.push(path_key_string[0..2].to_string());
+    path.push(path_key_string[2..4].to_string());
+    path.push(path_key_string[4..6].to_string());
+    path
+}
+
+fn construct_storable_path(path_prefix: &path::PathBuf, path_key: &String) -> path::PathBuf {
+    let mut path = path::PathBuf::from(path_prefix);
+    path.push(path_key);
+    path.set_extension("json");
+    path
 }
 
 fn store_json_string(path_prefix: String, path_key: Uuid, json: String) -> Result<(), String> {
-    let full_path = prepare_full_path(&path_prefix, &path_key.to_simple_string());
-    fs::create_dir_all(&full_path).ok();
-    let mut file = fs::File::create(Path::new(&format!("{}/{}.json", full_path, path_key.to_string()))).ok().expect("Cannot create file");
+    let store_path = construct_store_path(&path_prefix, &path_key.to_simple_string());
+    fs::create_dir_all(&store_path).ok();
+    let mut file = fs::File::create(construct_storable_path(&store_path, &path_key.to_string())).ok().expect("Cannot create file");
     match file.write_all(json.as_bytes()) {
         Ok(_) => Ok(()),
         Err(error) => Err(format!("Error: {}", error))
@@ -78,6 +88,12 @@ fn store_map(path_prefix: String, external_id: Uuid, storable: StorableMap) -> R
 }
 
 pub fn load(external_id: &String) -> Vec<u8> {
-    let maps_path = prepare_full_path(&MAPS_PATH.to_string(), external_id);
+    let map_store_path = construct_store_path(&MAPS_PATH.to_string(), external_id);
+    let map_path = construct_storable_path(&map_store_path, external_id);
+    let mut map_file = fs::File::open(&map_path).unwrap();
+    let mut map_string = String::new();
+    map_file.read_to_string(&mut map_string).ok();
+    let map: StorableMap = json::decode(&map_string).unwrap();
+
     vec![0]
 }
