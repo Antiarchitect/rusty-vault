@@ -3,6 +3,7 @@ extern crate rand;
 
 use self::crypto::aes_gcm::AesGcm;
 use self::crypto::aead::AeadEncryptor;
+use self::crypto::aead::AeadDecryptor;
 use self::crypto::aes::KeySize::KeySize256;
 use self::rand::{Rng, OsRng};
 
@@ -15,6 +16,10 @@ pub struct EncryptionResult {
   pub iv: Box<[u8]>,
   pub ciphertext: Vec<u8>,
   pub tag: Box<[u8]>
+}
+
+pub struct DecryptionResult {
+    pub plaintext: Vec<u8>
 }
 
 pub fn encrypt(auth_data: &[u8], plaintext: &[u8]) -> EncryptionResult {
@@ -35,5 +40,15 @@ pub fn encrypt(auth_data: &[u8], plaintext: &[u8]) -> EncryptionResult {
 
 	cipher.encrypt(plaintext, &mut ciphertext, &mut tag);
 
-	return EncryptionResult { key: Box::new(key), iv: Box::new(iv), ciphertext: ciphertext, tag: Box::new(tag) };
+	EncryptionResult { key: Box::new(key), iv: Box::new(iv), ciphertext: ciphertext, tag: Box::new(tag) }
+}
+
+pub fn decrypt(auth_data: &[u8], key: &[u8], iv: &[u8], ciphertext: &[u8], tag: &[u8]) -> DecryptionResult {
+    let ciphertext_len: usize = ciphertext.len();
+    let mut decipher = AesGcm::new(KeySize256, key, iv, auth_data);
+    let mut plaintext: Vec<u8> = Vec::with_capacity(ciphertext_len);
+    unsafe { plaintext.set_len(ciphertext_len); }
+    decipher.decrypt(ciphertext, &mut plaintext, tag);
+
+    DecryptionResult { plaintext: plaintext }
 }

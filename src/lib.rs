@@ -87,13 +87,22 @@ fn store_map(path_prefix: String, external_id: Uuid, storable: StorableMap) -> R
     Ok(())
 }
 
-pub fn load(external_id: &String) -> Vec<u8> {
-    let map_store_path = construct_store_path(&MAPS_PATH.to_string(), external_id);
-    let map_path = construct_storable_path(&map_store_path, external_id);
-    let mut map_file = fs::File::open(&map_path).unwrap();
-    let mut map_string = String::new();
-    map_file.read_to_string(&mut map_string).ok();
-    let map: StorableMap = json::decode(&map_string).unwrap();
+fn read_from_storage(prefix: &String, id: &String) -> Result<String, String> {
+    let path = construct_storable_path(&construct_store_path(prefix, id), id);
+    let mut file = fs::File::open(&path).unwrap();
+    let mut string = String::new();
+    match file.read_to_string(&mut string) {
+        Ok(_) => Ok(string),
+        Err(error) => Err(format!("Error: {}", error))
+    }
+}
 
-    vec![0]
+pub fn load(external_id: &String) -> Vec<u8> {
+    let map: StorableMap = json::decode(&read_from_storage(&MAPS_PATH.to_string(), external_id).unwrap()).unwrap();
+    let key: StorableKey = json::decode(&read_from_storage(&KEYS_PATH.to_string(), &map.key_id.to_string()).unwrap()).unwrap();
+    let data: StorableData = json::decode(&read_from_storage(&DATA_PATH.to_string(), &map.data_id.to_string()).unwrap()).unwrap();
+
+    let result = crypt::decrypt(external_id.as_bytes(), &key.key, &key.iv, &data.ciphertext, &map.tag);
+
+    result.plaintext
 }
