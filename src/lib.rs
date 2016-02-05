@@ -10,6 +10,9 @@ use std::io::prelude::*;
 use std::fs;
 use std::path;
 
+use std::sync::mpsc::channel;
+use std::thread;
+
 const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
 const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
 const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
@@ -35,8 +38,20 @@ struct StorableMap {
 pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     let result = crypt::encrypt(external_id.as_bytes(), &data);
 
-    let key_id = store_key(KEYS_PATH.to_string(), StorableKey { key: result.key, iv: result.iv }).unwrap();
-    let data_id = store_data(DATA_PATH.to_string(), StorableData { ciphertext: result.ciphertext }).unwrap();
+    let (key_tx, key_rx) = channel();
+    let storable_key = StorableKey { key: result.key, iv: result.iv };
+    thread::spawn(move || {
+        key_tx.send(store_key(KEYS_PATH.to_string(), storable_key).unwrap()).unwrap();
+    });
+
+    let (data_tx, data_rx) = channel();
+    let storable_data = StorableData { ciphertext: result.ciphertext };
+    thread::spawn(move || {
+        data_tx.send(store_data(DATA_PATH.to_string(), storable_data).unwrap()).unwrap();
+    });
+
+    let key_id = key_rx.recv().unwrap();
+    let data_id = data_rx.recv().unwrap();
     let external_uuid = Uuid::parse_str(&external_id).unwrap();
     store_map(MAPS_PATH.to_string(), external_uuid, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
 }
@@ -99,8 +114,21 @@ fn read_from_storage(prefix: &String, id: &String) -> Result<String, String> {
 
 pub fn load(external_id: &String) -> Vec<u8> {
     let map: StorableMap = json::decode(&read_from_storage(&MAPS_PATH.to_string(), external_id).unwrap()).unwrap();
-    let key: StorableKey = json::decode(&read_from_storage(&KEYS_PATH.to_string(), &map.key_id.to_string()).unwrap()).unwrap();
-    let data: StorableData = json::decode(&read_from_storage(&DATA_PATH.to_string(), &map.data_id.to_string()).unwrap()).unwrap();
+
+    let (key_tx, key_rx) = channel();
+    let key_id = map.key_id.to_string();
+    thread::spawn(move || {
+        key_tx.send(json::decode(&read_from_storage(&KEYS_PATH.to_string(), &key_id).unwrap()).unwrap()).unwrap();
+    });
+
+    let (data_tx, data_rx) = channel();
+    let data_id = map.data_id.to_string();
+    thread::spawn(move || {
+        data_tx.send(json::decode(&read_from_storage(&DATA_PATH.to_string(), &data_id).unwrap()).unwrap()).unwrap();
+    });
+
+    let key: StorableKey = key_rx.recv().unwrap();
+    let data: StorableData = data_rx.recv().unwrap();
 
     let result = crypt::decrypt(external_id.as_bytes(), &key.key, &key.iv, &data.ciphertext, &map.tag);
 
