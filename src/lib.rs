@@ -41,19 +41,19 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     let (key_tx, key_rx) = channel();
     let storable_key = StorableKey { key: result.key, iv: result.iv };
     thread::spawn(move || {
-        key_tx.send(store_key(KEYS_PATH.to_string(), storable_key).unwrap()).unwrap();
+        key_tx.send(store_key(storable_key).unwrap()).unwrap();
     });
 
     let (data_tx, data_rx) = channel();
     let storable_data = StorableData { ciphertext: result.ciphertext };
     thread::spawn(move || {
-        data_tx.send(store_data(DATA_PATH.to_string(), storable_data).unwrap()).unwrap();
+        data_tx.send(store_data(storable_data).unwrap()).unwrap();
     });
 
     let key_id = key_rx.recv().unwrap();
     let data_id = data_rx.recv().unwrap();
     let external_uuid = Uuid::parse_str(&external_id).unwrap();
-    store_map(MAPS_PATH.to_string(), external_uuid, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
+    store_map(external_uuid, StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
 }
 
 fn construct_store_path(path_prefix: &String, path_key_string: &String) -> path::PathBuf {
@@ -81,24 +81,24 @@ fn store_json_string(path_prefix: String, path_key: Uuid, json: String) -> Resul
     }
 }
 
-fn store_data(path_prefix: String, storable: StorableData) -> Result<Uuid, String> {
+fn store_data(storable: StorableData) -> Result<Uuid, String> {
     let id = Uuid::new_v4();
     let json = json::encode(&storable).unwrap();
-    store_json_string(path_prefix, id, json).ok();
+    store_json_string(DATA_PATH.to_string(), id, json).ok();
     Ok(id)
 }
 
-fn store_key(path_prefix: String, storable: StorableKey) -> Result<Uuid, String> {
+fn store_key(storable: StorableKey) -> Result<Uuid, String> {
     let id = Uuid::new_v4();
     let json = json::encode(&storable).unwrap();
-    store_json_string(path_prefix, id, json).ok();
+    store_json_string(KEYS_PATH.to_string(), id, json).ok();
     Ok(id)
 }
 
-fn store_map(path_prefix: String, external_id: Uuid, storable: StorableMap) -> Result<(), String> {
+fn store_map(external_id: Uuid, storable: StorableMap) -> Result<(), String> {
     let id = external_id;
     let json = json::encode(&storable).unwrap();
-    store_json_string(path_prefix, id, json).ok();
+    store_json_string(MAPS_PATH.to_string(), id, json).ok();
     Ok(())
 }
 
