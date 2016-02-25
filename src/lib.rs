@@ -9,7 +9,26 @@ use std::sync::mpsc::channel;
 use std::thread;
 
 mod storages;
-use storages::filesystem as storage;
+use storages::filesystem::FilesystemStorage as storage;
+
+const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
+const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
+const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
+
+pub struct StorableKey {
+    pub key: Box<[u8]>,
+    pub iv: Box<[u8]>
+}
+
+pub struct StorableData {
+    pub ciphertext: Vec<u8>
+}
+
+pub struct StorableMap {
+    pub key_id: Uuid,
+    pub data_id: Uuid,
+    pub tag: Box<[u8]>
+}
 
 pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     let result = crypt::encrypt(external_id.as_bytes(), &data);

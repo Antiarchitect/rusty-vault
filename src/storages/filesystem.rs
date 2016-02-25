@@ -5,10 +5,7 @@ use std::path;
 use uuid::Uuid;
 
 use rustc_serialize::json;
-
-const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
-const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
-const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
+use std::collections::HashMap;
 
 struct Storage {
     path: String
@@ -33,30 +30,15 @@ trait FilesystemStorage {
         path
     }
 
-    fn dump_json(&self, path_key: &String, json: String) -> Result<(), String> {
+    fn dump(&self, path_key: String, hash: HashMap) -> Result<(), String> {
         let store_path = self.construct_store_path(&self.path, path_key);
         fs::create_dir_all(&store_path).ok();
         let mut file = fs::File::create(self.construct_storable_path(&store_path, path_key)).ok().expect("Cannot create file");
-        match file.write_all(json.as_bytes()) {
+        match file.write_all(json::encode(hash).unwrap().as_bytes()) {
             Ok(_) => Ok(()),
             Err(error) => Err(format!("Error: {}", error))
         }
     }
-}
-
-trait DataStorage: FilesystemStorage {
-    fn dump(id: String, storable: StorableData) -> Result<(), String>;
-    fn load(id: String) -> Result<StorableData, String>;
-}
-
-trait KeysStorage: FilesystemStorage {
-    fn dump(id: String, storable: StorableKey) -> Result<(), String>;
-    fn load(id: String) -> Result<StorableKey, String>;
-}
-
-trait MapsStorage: FilesystemStorage {
-    fn dump(id: String, storable: StorableMap) -> Result<(), String>;
-    fn load(id: String) -> Result<StorableMap, String>;
 }
 
 impl FilesystemStorage for Storage {
@@ -65,32 +47,37 @@ impl FilesystemStorage for Storage {
     }
 }
 
-impl DataStorage for FilesystemStorage {
-    fn dump(&self, id: String, storable: StorableData) -> Result<(), String> {
-        self.dump_json(&id, json::encode(&storable).unwrap())
+trait StorableHashMap {
+    fn to_hash(&self) -> HashMap;
+}
+
+impl StorableHashMap for StorableKey {
+    fn to_hash(&self) -> HashMap {
+        let mut map = HashMap::new();
+        map.insert("key", self.key);
+        map.insert("iv", self.iv);
+        map
     }
-    fn load(id: String) -> Result<StorableData, String> {
+}
 
+impl StorableHashMap for StorableData {
+    fn to_hash(&self) -> HashMap {
+        let mut map = HashMap::new();
+        map.insert("ciphertext", self.ciphertext);
+        map
     }
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
-pub struct StorableKey {
-    pub key: Box<[u8]>,
-    pub iv: Box<[u8]>
+impl StorableHashMap for StorableMap {
+    fn to_hash(&self) -> HashMap {
+        let mut map = HashMap::new();
+        map.insert("key_id", self.key_id);
+        map.insert("data_id", self.data_id);
+        map.insert("tag", self.tag);
+        map
+    }
 }
 
-#[derive(RustcDecodable, RustcEncodable)]
-pub struct StorableData {
-    pub ciphertext: Vec<u8>
-}
-
-#[derive(RustcDecodable, RustcEncodable)]
-pub struct StorableMap {
-    pub key_id: Uuid,
-    pub data_id: Uuid,
-    pub tag: Box<[u8]>
-}
 
 pub fn load_data(data_id: &String) -> Result<StorableData, String> {
     match json::decode(&load_json_string(&DATA_PATH.to_string(), &data_id).unwrap()) {
