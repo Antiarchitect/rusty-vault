@@ -9,61 +9,56 @@ use std::sync::mpsc::channel;
 use std::thread;
 
 mod storages;
-use storages::filesystem::FilesystemStorage as storage;
+use storages::{StorableKey, StorableData, StorableMap};
+use storages::filesystem as Storage;
 
 const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
 const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
 const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
 
-pub struct StorableKey {
-    pub key: Box<[u8]>,
-    pub iv: Box<[u8]>
-}
-
-pub struct StorableData {
-    pub ciphertext: Vec<u8>
-}
-
-pub struct StorableMap {
-    pub key_id: Uuid,
-    pub data_id: Uuid,
-    pub tag: Box<[u8]>
-}
-
 pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     let result = crypt::encrypt(external_id.as_bytes(), &data);
 
-    let (key_tx, key_rx) = channel();
-    let storable_key = storage::StorableKey { key: result.key, iv: result.iv };
+    let (key_tx, key_rx) = channel::<Result<(), String>>();
+    let storable = StorableKey { key: result.key, iv: result.iv };
+    let storage = Storage::FilesystemStorage::new(KEYS_PATH);
+    let key_id = Uuid::new_v4();
     thread::spawn(move || {
-        key_tx.send(storage::store_key(storable_key).unwrap()).unwrap();
+        key_tx.send(storage.dump(key_id.to_string(), storable).unwrap()).unwrap();
     });
 
-    let (data_tx, data_rx) = channel();
-    let storable_data = storage::StorableData { ciphertext: result.ciphertext };
+    let (data_tx, data_rx) = channel::<Result<(), String>>();
+    let storable = StorableData { ciphertext: result.ciphertext };
+    let storage = Storage::FilesystemStorage::new(DATA_PATH);
+    let data_id = Uuid::new_v4();
     thread::spawn(move || {
-        data_tx.send(storage::store_data(storable_data).unwrap()).unwrap();
+        data_tx.send(storage.dump(data_id.to_string(), storable).unwrap()).unwrap();
     });
 
-    let key_id = key_rx.recv().unwrap();
-    let data_id = data_rx.recv().unwrap();
-    let external_uuid = Uuid::parse_str(&external_id).unwrap();
-    storage::store_map(external_uuid, storage::StorableMap { key_id: key_id, data_id: data_id, tag: result.tag })
+    let (map_tx, map_rx) = channel::<Result<(), String>>();
+    let storable = StorableMap { key_id: key_id, data_id: data_id, tag: result.tag };
+    let storage = Storage::FilesystemStorage::new(MAPS_PATH);
+    thread::spawn(move || {
+        map_tx.send(storage.dump(external_id, storable).unwrap()).unwrap();
+    });
 }
 
 pub fn load(external_id: &String) -> Vec<u8> {
-    let map = storage::load_map(&external_id).unwrap();
+    let storage = Storage::FilesystemStorage::new(MAPS_PATH);
+    let map: storages::StorableMap = storage.load(external_id).ok().expect(format!("Nothing stored in maps for {}", external_id));
 
     let (key_tx, key_rx) = channel();
-    let key_id = map.key_id.to_string();
+    let id = map.key_id.to_string();
+    let storage = Storage::FilesystemStorage::new(KEYS_PATH);
     thread::spawn(move || {
-        key_tx.send(storage::load_key(&key_id).unwrap()).unwrap();
+        key_tx.send(storage.load(id).ok().expect(format!("Nothing stored in keys for {}", id)));
     });
 
     let (data_tx, data_rx) = channel();
-    let data_id = map.data_id.to_string();
+    let id = map.data_id.to_string();
+    let storage = Storage::FilesystemStorage::new(MAPS_PATH);
     thread::spawn(move || {
-        data_tx.send(storage::load_data(&data_id).unwrap()).unwrap();
+        data_tx.send(storage.load(id).ok().expect(format!("Nothing stored in data for {}", id)));
     });
 
     let key = key_rx.recv().unwrap();
