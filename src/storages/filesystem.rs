@@ -4,9 +4,6 @@ use std::path;
 
 use rustc_serialize::json;
 use rustc_serialize::{Decodable, Encodable};
-use std::collections::HashMap;
-
-use super::{StorableKey, StorableData, StorableMap};
 
 pub struct Storage {
     path: String
@@ -16,9 +13,9 @@ pub trait FilesystemStorage {
 
     fn new(path: &'static str) -> Self;
 
-    fn ensure_storage_path(&self, key: String) -> path::PathBuf;
+    fn ensure_storage_path(&self, key: &String) -> path::PathBuf;
 
-    fn dump<T: Encodable>(&self, id: String, storable: T) -> Result<(), String> {
+    fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), String> {
         let path = self.ensure_storage_path(id);
         let mut storage = fs::File::create(&path).ok().expect(&format!("Cannot create file {}", path.to_string_lossy()));
         match storage.write_all(json::encode(&storable).unwrap().as_bytes()) {
@@ -27,7 +24,7 @@ pub trait FilesystemStorage {
         }
     }
 
-    fn load<T: Decodable>(&self, id: String) -> Result<T, String> {
+    fn load<T: Decodable>(&self, id: &String) -> Result<T, String> {
         let path = self.ensure_storage_path(id);
         let mut storage = fs::File::open(&path).ok().expect(&format!("Cannot open file {}", path.to_string_lossy()));
         let mut string = String::new();
@@ -45,8 +42,8 @@ impl FilesystemStorage for Storage {
         Storage { path: path.to_string() }
     }
 
-    fn ensure_storage_path(&self, key: String) -> path::PathBuf {
-        let mut path = path::PathBuf::from(self.path);
+    fn ensure_storage_path(&self, key: &String) -> path::PathBuf {
+        let mut path = path::PathBuf::from(&self.path);
         path.push(key[0..2].to_string());
         path.push(key[2..4].to_string());
         path.push(key[4..6].to_string());

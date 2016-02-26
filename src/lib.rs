@@ -24,22 +24,26 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
 
     let (tx, rx) = channel::<Result<(), String>>();
 
+    let storable = StorableKey { key: encrypted.key, iv: encrypted.iv };
+    let key_tx = tx.clone();
     thread::spawn(move || {
-        let storable = StorableKey { key: encrypted.key, iv: encrypted.iv };
         let storage = storage::Storage::new(KEYS_PATH);
-        tx.clone().send(storage.dump(key_id.to_string(), storable)).unwrap();
+        key_tx.send(storage.dump(&key_id.to_string(), storable)).unwrap();
     });
 
+    let storable = StorableData { ciphertext: encrypted.ciphertext };
+    let data_tx = tx.clone();
     thread::spawn(move || {
-        let storable = StorableData { ciphertext: encrypted.ciphertext };
         let storage = storage::Storage::new(DATA_PATH);
-        tx.clone().send(storage.dump(data_id.to_string(), storable)).unwrap();
+        data_tx.send(storage.dump(&data_id.to_string(), storable)).unwrap();
     });
 
+    let storable = StorableMap { key_id: key_id, data_id: data_id, tag: encrypted.tag };
+    let map_tx = tx.clone();
+    let map_id = external_id.clone();
     thread::spawn(move || {
-        let storable = StorableMap { key_id: key_id, data_id: data_id, tag: encrypted.tag };
         let storage = storage::Storage::new(MAPS_PATH);
-        tx.clone().send(storage.dump(external_id, storable)).unwrap();
+        map_tx.send(storage.dump(&map_id, storable)).unwrap();
     });
 
     let results = (0..3).map(|_| rx.recv() ).collect::<Result<Vec<_>, _>>().unwrap();
@@ -52,20 +56,20 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
 
 pub fn load(external_id: String) -> Vec<u8> {
     let storage = storage::Storage::new(MAPS_PATH);
-    let map: storages::StorableMap = storage.load(external_id).ok().expect(&format!("Nothing stored in maps for {}", external_id));
+    let map: storages::StorableMap = storage.load(&external_id).ok().expect(&format!("Nothing stored in maps for {}", &external_id));
 
     let (key_tx, key_rx) = channel();
     let id = map.key_id.to_string();
     let storage = storage::Storage::new(KEYS_PATH);
     thread::spawn(move || {
-        key_tx.send(storage.load(id).ok().expect(&format!("Nothing stored in keys for {}", id)));
+        key_tx.send(storage.load(&id).ok().expect(&format!("Nothing stored in keys for {}", id)))
     });
 
     let (data_tx, data_rx) = channel();
     let id = map.data_id.to_string();
     let storage = storage::Storage::new(MAPS_PATH);
     thread::spawn(move || {
-        data_tx.send(storage.load(id).ok().expect(&format!("Nothing stored in data for {}", id)));
+        data_tx.send(storage.load(&id).ok().expect(&format!("Nothing stored in data for {}", id)))
     });
 
     let key: StorableKey = key_rx.recv().unwrap();
