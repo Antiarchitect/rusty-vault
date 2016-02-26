@@ -34,7 +34,7 @@ fn main() {
 
     match data_string {
         Some(value) => dump(external_id, value.into_bytes()),
-        None => load(&external_id)
+        None => load(external_id)
     }
 }
 
@@ -42,7 +42,7 @@ fn dump(external_id: String, data: Vec<u8>) {
     vault::dump(external_id, data).unwrap()
 }
 
-fn load(external_id: &String) {
+fn load(external_id: String) {
     let result = vault::load(external_id);
     println!("Data: {:?}", String::from_utf8(result).unwrap());
 }

@@ -3,16 +3,16 @@ use std::fs;
 use std::path;
 
 use rustc_serialize::json;
-use rustc_serialize::serialize::{Decodable, Encodable};
+use rustc_serialize::{Decodable, Encodable};
 use std::collections::HashMap;
 
 use super::{StorableKey, StorableData, StorableMap};
 
-struct Storage {
+pub struct Storage {
     path: String
 }
 
-trait FilesystemStorage {
+pub trait FilesystemStorage {
 
     fn new(path: &'static str) -> Self;
 
@@ -40,6 +40,7 @@ trait FilesystemStorage {
 }
 
 impl FilesystemStorage for Storage {
+
     fn new(path: &'static str) -> Storage {
         Storage { path: path.to_string() }
     }
@@ -54,4 +55,5 @@ impl FilesystemStorage for Storage {
         path.set_extension("json");
         path
     }
+
 }
