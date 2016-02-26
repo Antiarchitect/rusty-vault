@@ -18,30 +18,36 @@ const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
 const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
 
 pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
-    let result = crypt::encrypt(external_id.as_bytes(), &data);
-
-    let (key_tx, key_rx) = channel();
-    let storable = StorableKey { key: result.key, iv: result.iv };
-    let storage = storage::Storage::new(KEYS_PATH);
+    let encrypted = crypt::encrypt(external_id.as_bytes(), &data);
     let key_id = Uuid::new_v4();
-    thread::spawn(move || {
-        key_tx.send(storage.dump(key_id.to_string(), storable)).unwrap();
-    });
-
-    let (data_tx, data_rx) = channel();
-    let storable = StorableData { ciphertext: result.ciphertext };
-    let storage = storage::Storage::new(DATA_PATH);
     let data_id = Uuid::new_v4();
+
+    let (tx, rx) = channel::<Result<(), String>>();
+
     thread::spawn(move || {
-        data_tx.send(storage.dump(data_id.to_string(), storable)).unwrap();
+        let storable = StorableKey { key: encrypted.key, iv: encrypted.iv };
+        let storage = storage::Storage::new(KEYS_PATH);
+        tx.clone().send(storage.dump(key_id.to_string(), storable)).unwrap();
     });
 
-    let (map_tx, map_rx) = channel();
-    let storable = StorableMap { key_id: key_id, data_id: data_id, tag: result.tag };
-    let storage = storage::Storage::new(MAPS_PATH);
     thread::spawn(move || {
-        map_tx.send(storage.dump(external_id, storable)).unwrap();
+        let storable = StorableData { ciphertext: encrypted.ciphertext };
+        let storage = storage::Storage::new(DATA_PATH);
+        tx.clone().send(storage.dump(data_id.to_string(), storable)).unwrap();
     });
+
+    thread::spawn(move || {
+        let storable = StorableMap { key_id: key_id, data_id: data_id, tag: encrypted.tag };
+        let storage = storage::Storage::new(MAPS_PATH);
+        tx.clone().send(storage.dump(external_id, storable)).unwrap();
+    });
+
+    let results = (0..3).map(|_| rx.recv() ).collect::<Result<Vec<_>, _>>().unwrap();
+
+    match results.into_iter().all( |i| i.is_ok() ) {
+        true => Ok(()),
+        false => Err("Dump failed!".to_string())
+    }
 }
 
 pub fn load(external_id: String) -> Vec<u8> {
