@@ -67,7 +67,7 @@ pub fn load(external_id: String) -> Vec<u8> {
 
     let (data_tx, data_rx) = channel();
     let id = map.data_id.to_string();
-    let storage = storage::Storage::new(MAPS_PATH);
+    let storage = storage::Storage::new(DATA_PATH);
     thread::spawn(move || {
         data_tx.send(storage.load(&id).ok().expect(&format!("Nothing stored in data for {}", id)))
     });
