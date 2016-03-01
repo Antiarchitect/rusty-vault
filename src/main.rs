@@ -39,10 +39,10 @@ fn main() {
 }
 
 fn dump(external_id: String, data: Vec<u8>) {
-    vault::dump(external_id, data).unwrap()
+    vault::dump(&external_id, data).unwrap()
 }
 
 fn load(external_id: String) {
-    let result = vault::load(external_id);
+    let result = vault::load(&external_id);
     println!("Data: {:?}", String::from_utf8(result).unwrap());
 }

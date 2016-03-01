@@ -1,3 +1,7 @@
+use std::sync::mpsc::channel;
+use std::thread;
+use std::error::Error;
+
 mod crypt;
 
 extern crate uuid;
@@ -5,37 +9,34 @@ use uuid::Uuid;
 
 extern crate rustc_serialize;
 
-use std::sync::mpsc::channel;
-use std::thread;
-
 mod storages;
 use storages::{StorableKey, StorableData, StorableMap};
 use storages::filesystem as storage;
-use storages::filesystem::FilesystemStorage;
+use storages::filesystem::Storage;
 
 const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
 const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
 const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
 
-pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
+pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
     let encrypted = crypt::encrypt(external_id.as_bytes(), &data);
     let key_id = Uuid::new_v4();
     let data_id = Uuid::new_v4();
 
-    let (tx, rx) = channel::<Result<(), String>>();
+    let (tx, rx) = channel();
 
     let storable = StorableKey { key: encrypted.key, iv: encrypted.iv };
     let key_tx = tx.clone();
     thread::spawn(move || {
         let storage = storage::Storage::new(KEYS_PATH);
-        key_tx.send(storage.dump(&key_id.to_string(), storable)).unwrap();
+        key_tx.send(storage.dump(&key_id.to_string(), storable).map_err( |e| e.to_string() ))
     });
 
     let storable = StorableData { ciphertext: encrypted.ciphertext };
     let data_tx = tx.clone();
     thread::spawn(move || {
         let storage = storage::Storage::new(DATA_PATH);
-        data_tx.send(storage.dump(&data_id.to_string(), storable)).unwrap();
+        data_tx.send(storage.dump(&data_id.to_string(), storable).map_err( |e| e.to_string() ))
     });
 
     let storable = StorableMap { key_id: key_id, data_id: data_id, tag: encrypted.tag };
@@ -43,20 +44,20 @@ pub fn dump(external_id: String, data: Vec<u8>) -> Result<(), String>  {
     let map_id = external_id.clone();
     thread::spawn(move || {
         let storage = storage::Storage::new(MAPS_PATH);
-        map_tx.send(storage.dump(&map_id, storable)).unwrap();
+        map_tx.send(storage.dump(&map_id, storable).map_err( |e| e.to_string() ))
     });
 
     let results = (0..3).map(|_| rx.recv() ).collect::<Result<Vec<_>, _>>().unwrap();
 
     match results.into_iter().all( |i| i.is_ok() ) {
         true => Ok(()),
-        false => Err("Dump failed!".to_string())
+        false => Err(From::from("Cannot dump object."))
     }
 }
 
-pub fn load(external_id: String) -> Vec<u8> {
+pub fn load(external_id: &String) -> Vec<u8> {
     let storage = storage::Storage::new(MAPS_PATH);
-    let map: storages::StorableMap = storage.load(&external_id).ok().expect(&format!("Nothing stored in maps for {}", &external_id));
+    let map: storages::StorableMap = storage.load(external_id).ok().expect(&format!("Nothing stored in maps for {}", external_id));
 
     let (key_tx, key_rx) = channel();
     let id = map.key_id.to_string();
@@ -78,4 +79,11 @@ pub fn load(external_id: String) -> Vec<u8> {
     let result = crypt::decrypt(external_id.as_bytes(), &key.key, &key.iv, &data.ciphertext, &map.tag);
 
     result.plaintext
+}
+
+pub fn delete(external_id: &String) -> Result<(), String> {
+    let storage = storage::Storage::new(MAPS_PATH);
+    let map: storages::StorableMap = storage.load(external_id).expect(
+        return Ok(()) // No map stored therefore delete operation considered OK
+    );
 }
