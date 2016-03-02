@@ -39,10 +39,15 @@ fn main() {
 }
 
 fn dump(external_id: String, data: Vec<u8>) {
-    vault::dump(&external_id, data).unwrap()
+    match vault::dump(&external_id, data) {
+        Ok(_) => println!("Object is successfully stored!"),
+        Err(error) => println!("An error has occurred: {}", error)
+    }
 }
 
 fn load(external_id: String) {
-    let result = vault::load(&external_id);
-    println!("Data: {:?}", String::from_utf8(result).unwrap());
+    match vault::load(&external_id)  {
+        Ok(plaintext) => println!("Data: {}", String::from_utf8(plaintext).unwrap()),
+        Err(error) => println!("An error has occurred: {:?}", error)
+    }
 }

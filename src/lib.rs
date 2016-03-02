@@ -19,6 +19,9 @@ const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
 const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
 
 pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
+
+    try!(delete(external_id)); // To replace existing object we should remove the previous one.
+
     let encrypted = crypt::encrypt(external_id.as_bytes(), &data);
     let key_id = Uuid::new_v4();
     let data_id = Uuid::new_v4();
@@ -55,35 +58,65 @@ pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
     }
 }
 
-pub fn load(external_id: &String) -> Vec<u8> {
+pub fn load(external_id: &String) -> Result<Vec<u8>, Box<Error>> {
     let storage = storage::Storage::new(MAPS_PATH);
-    let map: storages::StorableMap = storage.load(external_id).ok().expect(&format!("Nothing stored in maps for {}", external_id));
+    let map: storages::StorableMap = try!(storage.load(external_id));
 
     let (key_tx, key_rx) = channel();
     let id = map.key_id.to_string();
     let storage = storage::Storage::new(KEYS_PATH);
     thread::spawn(move || {
-        key_tx.send(storage.load(&id).ok().expect(&format!("Nothing stored in keys for {}", id)))
+        key_tx.send(storage.load(&id).map_err( |e| e.to_string() ))
     });
 
     let (data_tx, data_rx) = channel();
     let id = map.data_id.to_string();
     let storage = storage::Storage::new(DATA_PATH);
     thread::spawn(move || {
-        data_tx.send(storage.load(&id).ok().expect(&format!("Nothing stored in data for {}", id)))
+        data_tx.send(storage.load(&id).map_err( |e| e.to_string() ))
     });
 
-    let key: StorableKey = key_rx.recv().unwrap();
-    let data: StorableData = data_rx.recv().unwrap();
+    let key: StorableKey = try!(key_rx.recv().unwrap());
+    let data: StorableData = try!(data_rx.recv().unwrap());
 
     let result = crypt::decrypt(external_id.as_bytes(), &key.key, &key.iv, &data.ciphertext, &map.tag);
 
-    result.plaintext
+    Ok(result.plaintext)
 }
 
-pub fn delete(external_id: &String) -> Result<(), String> {
+pub fn delete(external_id: &String) -> Result<(), Box<Error>> {
     let storage = storage::Storage::new(MAPS_PATH);
-    let map: storages::StorableMap = storage.load(external_id).expect(
-        return Ok(()) // No map stored therefore delete operation considered OK
-    );
+
+    let map: storages::StorableMap = match storage.load(external_id) {
+        Ok(value) => value,
+        Err(_) => return Ok(())
+    };
+
+    let (tx, rx) = channel();
+
+    let map_tx = tx.clone();
+    let id = external_id.clone();
+    thread::spawn(move || {
+        map_tx.send(storage.delete(&id).map_err( |e| e.to_string() ))
+    });
+
+    let id = map.key_id.to_string();
+    let storage = storage::Storage::new(KEYS_PATH);
+    let key_tx = tx.clone();
+    thread::spawn(move || {
+        key_tx.send(storage.delete(&id).map_err( |e| e.to_string() ))
+    });
+
+    let id = map.data_id.to_string();
+    let storage = storage::Storage::new(DATA_PATH);
+    let data_tx = tx.clone();
+    thread::spawn(move || {
+        data_tx.send(storage.delete(&id).map_err( |e| e.to_string() ))
+    });
+
+    let results = (0..3).map(|_| rx.recv() ).collect::<Result<Vec<_>, _>>().unwrap();
+    match results.into_iter().all( |i| i.is_ok() ) {
+        true => Ok(()),
+        false => Err(From::from("Cannot delete object."))
+    }
 }
