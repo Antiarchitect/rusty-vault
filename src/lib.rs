@@ -57,9 +57,12 @@ pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
     }
 }
 
-pub fn load(external_id: &String) -> Result<Vec<u8>, Box<Error>> {
+pub fn load(external_id: &String) -> Result<Option<Vec<u8>>, Box<Error>> {
     let storage = storage::Storage::new(MAPS_PATH);
-    let map: storages::StorableMap = try!(storage.load(external_id));
+    let map: storages::StorableMap = match try!(storage.load(external_id)) {
+        Some(value) => value,
+        None => return Ok(None)
+    };
 
     let (key_tx, key_rx) = channel();
     let id = map.key_id.to_string();
@@ -75,20 +78,25 @@ pub fn load(external_id: &String) -> Result<Vec<u8>, Box<Error>> {
         data_tx.send(storage.load(&id).map_err( |e| e.to_string() ))
     });
 
-    let key: StorableKey = try!(key_rx.recv().unwrap());
-    let data: StorableData = try!(data_rx.recv().unwrap());
+    let key: StorableKey = match try!(key_rx.recv().unwrap()) {
+        Some(value) => value,
+        None => return Err(From::from("Key was not found."))
+    };
+    let data: StorableData = match try!(data_rx.recv().unwrap()) {
+        Some(value) => value,
+        None => return Err(From::from("Data was not found."))
+    };
 
     let result = crypt::decrypt(external_id.as_bytes(), &key.key, &key.iv, &data.ciphertext, &map.tag);
 
-    Ok(result.plaintext)
+    Ok(Some(result.plaintext))
 }
 
 pub fn delete(external_id: &String) -> Result<Option<()>, Box<Error>> {
     let storage = storage::Storage::new(MAPS_PATH);
-
-    let map: storages::StorableMap = match storage.load(external_id) {
-        Ok(value) => value,
-        Err(_) => return Ok(None)
+    let map: storages::StorableMap = match try!(storage.load(external_id)) {
+        Some(value) => value,
+        None => return Ok(None)
     };
 
     let (tx, rx) = channel();

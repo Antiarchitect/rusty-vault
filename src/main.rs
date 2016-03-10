@@ -50,7 +50,8 @@ fn dump(external_id: String, data: Vec<u8>) {
 
 fn load(external_id: String) {
     match vault::load(&external_id) {
-        Ok(plaintext) => println!("Data: {}", String::from_utf8(plaintext).unwrap()),
+        Ok(Some(plaintext)) => println!("Data: {}", String::from_utf8(plaintext).unwrap()),
+        Ok(None) => println!("Object {} was not found.", external_id),
         Err(error) => println!("An error has occurred: {}", error)
     }
 }

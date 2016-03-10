@@ -27,6 +27,8 @@ impl Storage {
         Ok(path)
     }
 
+
+
     pub fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>> {
         let path = try!(self.ensure_storage_path(id));
         let mut storage = try!(fs::File::create(&path));
@@ -34,16 +36,19 @@ impl Storage {
         Ok(())
     }
 
-    pub fn delete(&self, id: &String) -> Result<(), Box<Error>> {
-        try!(fs::remove_file(try!(self.ensure_storage_path(id))));
-        Ok(())
+    pub fn delete(&self, id: &String) -> Result<Option<()>, Box<Error>> {
+        let path = try!(self.ensure_storage_path(id));
+        if !(path.exists()) { return Ok(None) };
+        try!(fs::remove_file(path));
+        Ok(Some(()))
     }
 
-    pub fn load<T: Decodable>(&self, id: &String) -> Result<T, Box<Error>> {
+    pub fn load<T: Decodable>(&self, id: &String) -> Result<Option<T>, Box<Error>> {
         let path = try!(self.ensure_storage_path(id));
+        if !(path.exists()) { return Ok(None) };
         let mut storage = try!(fs::File::open(&path));
         let mut string = String::new();
         try!(storage.read_to_string(&mut string));
-        Ok(try!(json::decode(&string)))
+        Ok(Some(try!(json::decode(&string))))
     }
 }
