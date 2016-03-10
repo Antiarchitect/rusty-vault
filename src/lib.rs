@@ -84,12 +84,12 @@ pub fn load(external_id: &String) -> Result<Vec<u8>, Box<Error>> {
     Ok(result.plaintext)
 }
 
-pub fn delete(external_id: &String) -> Result<(), Box<Error>> {
+pub fn delete(external_id: &String) -> Result<Option<()>, Box<Error>> {
     let storage = storage::Storage::new(MAPS_PATH);
 
     let map: storages::StorableMap = match storage.load(external_id) {
         Ok(value) => value,
-        Err(_) => return Ok(())
+        Err(_) => return Ok(None)
     };
 
     let (tx, rx) = channel();
@@ -116,7 +116,7 @@ pub fn delete(external_id: &String) -> Result<(), Box<Error>> {
 
     let results = (0..3).map(|_| rx.recv() ).collect::<Result<Vec<_>, _>>().unwrap();
     match results.into_iter().all( |i| i.is_ok() ) {
-        true => Ok(()),
+        true => Ok(Some(())),
         false => Err(From::from("Cannot delete object."))
     }
 }
