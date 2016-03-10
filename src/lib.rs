@@ -12,7 +12,6 @@ extern crate rustc_serialize;
 mod storages;
 use storages::{StorableKey, StorableData, StorableMap};
 use storages::filesystem as storage;
-use storages::filesystem::Storage;
 
 const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
 const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
