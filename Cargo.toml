@@ -8,4 +8,4 @@ docopt = "*"
 rust-crypto = "*"
 rand = "*"
 rustc-serialize = "*"
-uuid = "*"
+uuid = { version = "0.2.2", features = ["rustc-serialize", "v4"] }
