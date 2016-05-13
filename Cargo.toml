@@ -5,6 +5,7 @@ authors = ["Andrey Voronkov <voronkovaa@gmail.com>"]
 
 [dependencies]
 docopt = "*"
+postgres = "*"
 rust-crypto = "*"
 rand = "*"
 rustc-serialize = "*"

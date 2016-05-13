@@ -11,11 +11,13 @@ extern crate rustc_serialize;
 
 mod storages;
 use storages::{StorableKey, StorableData, StorableMap};
-use storages::filesystem as storage;
 
-const KEYS_PATH: &'static str = "/home/andrey/Documents/storages/keys";
-const DATA_PATH: &'static str = "/home/andrey/Documents/storages/data";
-const MAPS_PATH: &'static str = "/home/andrey/Documents/storages/maps";
+use storages::filesystem as fs_storage;
+const KEYS_STORAGE: fs_storage::Storage = fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" };
+
+use storages::postgresql as pg_storage;
+const DATA_STORAGE: pg_storage::Storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" };
+const MAPS_STORAGE: pg_storage::Storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps"  };
 
 pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
 
@@ -30,14 +32,14 @@ pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
     let storable = StorableKey { key: encrypted.key, iv: encrypted.iv };
     let key_tx = tx.clone();
     thread::spawn(move || {
-        let storage = storage::Storage::new(KEYS_PATH);
+        let storage = KEYS_STORAGE;
         key_tx.send(storage.dump(&key_id.to_string(), storable).map_err( |e| e.to_string() ))
     });
 
     let storable = StorableData { ciphertext: encrypted.ciphertext };
     let data_tx = tx.clone();
     thread::spawn(move || {
-        let storage = storage::Storage::new(DATA_PATH);
+        let storage = DATA_STORAGE;
         data_tx.send(storage.dump(&data_id.to_string(), storable).map_err( |e| e.to_string() ))
     });
 
@@ -45,7 +47,7 @@ pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
     let map_tx = tx.clone();
     let map_id = external_id.clone();
     thread::spawn(move || {
-        let storage = storage::Storage::new(MAPS_PATH);
+        let storage = MAPS_STORAGE;
         map_tx.send(storage.dump(&map_id, storable).map_err( |e| e.to_string() ))
     });
 
@@ -58,7 +60,7 @@ pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
 }
 
 pub fn load(external_id: &String) -> Result<Option<Vec<u8>>, Box<Error>> {
-    let storage = storage::Storage::new(MAPS_PATH);
+    let storage = MAPS_STORAGE;
     let map: storages::StorableMap = match try!(storage.load(external_id)) {
         Some(value) => value,
         None => return Ok(None)
@@ -66,14 +68,14 @@ pub fn load(external_id: &String) -> Result<Option<Vec<u8>>, Box<Error>> {
 
     let (key_tx, key_rx) = channel();
     let id = map.key_id.to_string();
-    let storage = storage::Storage::new(KEYS_PATH);
+    let storage = KEYS_STORAGE;
     thread::spawn(move || {
         key_tx.send(storage.load(&id).map_err( |e| e.to_string() ))
     });
 
     let (data_tx, data_rx) = channel();
     let id = map.data_id.to_string();
-    let storage = storage::Storage::new(DATA_PATH);
+    let storage = DATA_STORAGE;
     thread::spawn(move || {
         data_tx.send(storage.load(&id).map_err( |e| e.to_string() ))
     });
@@ -93,7 +95,7 @@ pub fn load(external_id: &String) -> Result<Option<Vec<u8>>, Box<Error>> {
 }
 
 pub fn delete(external_id: &String) -> Result<Option<()>, Box<Error>> {
-    let storage = storage::Storage::new(MAPS_PATH);
+    let storage = MAPS_STORAGE;
     let map: storages::StorableMap = match try!(storage.load(external_id)) {
         Some(value) => value,
         None => return Ok(None)
@@ -108,14 +110,14 @@ pub fn delete(external_id: &String) -> Result<Option<()>, Box<Error>> {
     });
 
     let id = map.key_id.to_string();
-    let storage = storage::Storage::new(KEYS_PATH);
+    let storage = KEYS_STORAGE;
     let key_tx = tx.clone();
     thread::spawn(move || {
         key_tx.send(storage.delete(&id).map_err( |e| e.to_string() ))
     });
 
     let id = map.data_id.to_string();
-    let storage = storage::Storage::new(DATA_PATH);
+    let storage = DATA_STORAGE;
     let data_tx = tx.clone();
     thread::spawn(move || {
         data_tx.send(storage.delete(&id).map_err( |e| e.to_string() ))

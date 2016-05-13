@@ -7,17 +7,13 @@ use rustc_serialize::json;
 use rustc_serialize::{Decodable, Encodable};
 
 pub struct Storage {
-    path: path::PathBuf
+    pub path: &'static str
 }
 
 impl Storage {
 
-    pub fn new(path: &'static str) -> Storage {
-        Storage { path: path::PathBuf::from(&path) }
-    }
-
     fn ensure_storage_path(&self, key: &String) -> Result<path::PathBuf, Box<Error>> {
-        let mut path = self.path.clone();
+        let mut path = path::PathBuf::from(key);
         path.push(key[0..2].to_string());
         path.push(key[2..4].to_string());
         path.push(key[4..6].to_string());
@@ -26,8 +22,6 @@ impl Storage {
         path.set_extension("json");
         Ok(path)
     }
-
-
 
     pub fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>> {
         let path = try!(self.ensure_storage_path(id));

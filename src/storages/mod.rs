@@ -1,4 +1,5 @@
 pub mod filesystem;
+pub mod postgresql;
 
 use uuid::Uuid;
 
