@@ -13,7 +13,8 @@ pub struct Storage {
 impl Storage {
 
     fn ensure_storage_path(&self, key: &String) -> Result<path::PathBuf, Box<Error>> {
-        let mut path = path::PathBuf::from(key);
+        let mut path = path::PathBuf::from(self.path);
+        path.push(key);
         path.push(key[0..2].to_string());
         path.push(key[2..4].to_string());
         path.push(key[4..6].to_string());

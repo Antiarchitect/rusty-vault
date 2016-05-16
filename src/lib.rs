@@ -53,10 +53,13 @@ pub fn dump(external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>>  {
 
     let results = (0..3).map(|_| rx.recv() ).collect::<Result<Vec<_>, _>>().unwrap();
 
-    match results.into_iter().all( |i| i.is_ok() ) {
-        true => Ok(()),
-        false => Err(From::from("Cannot dump object."))
+    for result in results.into_iter() {
+        match result {
+            Ok(_) => {},
+            Err(e) => return Err(From::from(e.to_string()))
+        }
     }
+    Ok(())
 }
 
 pub fn load(external_id: &String) -> Result<Option<Vec<u8>>, Box<Error>> {
