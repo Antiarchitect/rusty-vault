@@ -43,7 +43,6 @@ impl Storage {
         for row in &try!(connection.query(&format!("SELECT id, data FROM {} WHERE id = $1", &self.table_name), &[&try!(Uuid::parse_str(id))])) {
             let json: json::Json = row.get(1);
             let data: T = try!(json::decode(&json.to_string()));
-            // let json = try!(json::decode(&data));
             return Ok(Some(data))
         }
         Ok(None)
