@@ -10,6 +10,10 @@ pub struct Storage {
     pub path: &'static str
 }
 
+impl super::MapsStorage for Storage {}
+impl super::KeysStorage for Storage {}
+impl super::DataStorage for Storage {}
+
 impl Storage {
 
     fn ensure_storage_path(&self, key: &String) -> Result<path::PathBuf, Box<Error>> {
@@ -24,21 +28,25 @@ impl Storage {
         Ok(path)
     }
 
-    pub fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>> {
+}
+
+impl super::BaseStorage for Storage {
+
+    fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>> {
         let path = try!(self.ensure_storage_path(id));
         let mut storage = try!(fs::File::create(&path));
         try!(storage.write_all(json::encode(&storable).unwrap().as_bytes()));
         Ok(())
     }
 
-    pub fn delete(&self, id: &String) -> Result<Option<()>, Box<Error>> {
+    fn delete(&self, id: &String) -> Result<Option<()>, Box<Error>> {
         let path = try!(self.ensure_storage_path(id));
         if !(path.exists()) { return Ok(None) };
         try!(fs::remove_file(path));
         Ok(Some(()))
     }
 
-    pub fn load<T: Decodable>(&self, id: &String) -> Result<Option<T>, Box<Error>> {
+    fn load<T: Decodable>(&self, id: &String) -> Result<Option<T>, Box<Error>> {
         let path = try!(self.ensure_storage_path(id));
         if !(path.exists()) { return Ok(None) };
         let mut storage = try!(fs::File::open(&path));

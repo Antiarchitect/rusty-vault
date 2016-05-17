@@ -14,6 +14,10 @@ pub struct Storage {
     pub table_name: &'static str
 }
 
+impl super::MapsStorage for Storage {}
+impl super::KeysStorage for Storage {}
+impl super::DataStorage for Storage {}
+
 impl Storage {
 
     fn ensure_connection(&self) -> Result<Connection, Box<Error>> {
@@ -27,18 +31,22 @@ impl Storage {
         Ok(connection)
     }
 
-    pub fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>> {
+}
+
+impl super::BaseStorage for Storage {
+
+    fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>> {
         let json: json::Json = try!(json::Json::from_str(&try!(json::encode(&storable))));
         try!(self.ensure_connection().ok().unwrap().execute(&format!("INSERT INTO {} (id, data) VALUES ($1, $2)", &self.table_name), &[&try!(Uuid::parse_str(id)), &json]));
         Ok(())
     }
 
-    pub fn delete(&self, id: &String) -> Result<Option<()>, Box<Error>> {
+    fn delete(&self, id: &String) -> Result<Option<()>, Box<Error>> {
         try!(self.ensure_connection().ok().unwrap().execute(&format!("DELETE FROM {} WHERE id = $1", &self.table_name), &[&try!(Uuid::parse_str(id))]));
         Ok(Some(()))
     }
 
-    pub fn load<T: Decodable>(&self, id: &String) -> Result<Option<T>, Box<Error>> {
+    fn load<T: Decodable>(&self, id: &String) -> Result<Option<T>, Box<Error>> {
         let connection = self.ensure_connection().ok().unwrap();
         for row in &try!(connection.query(&format!("SELECT id, data FROM {} WHERE id = $1", &self.table_name), &[&try!(Uuid::parse_str(id))])) {
             let json: json::Json = row.get(1);
@@ -47,4 +55,5 @@ impl Storage {
         }
         Ok(None)
     }
+
 }
