@@ -1,6 +1,6 @@
 [root]
 name = "rusty-vault"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "docopt 0.6.80 (registry+https://github.com/rust-lang/crates.io-index)",
  "postgres 0.11.7 (registry+https://github.com/rust-lang/crates.io-index)",
