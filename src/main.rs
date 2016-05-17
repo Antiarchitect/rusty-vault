@@ -30,13 +30,13 @@ struct Args {
 }
 
 fn main() {
-    let keys_storage = fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" };
-    let data_storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" };
-    let maps_storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" };
+    static KEYS_STORAGE: fs_storage::Storage = fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" };
+    static DATA_STORAGE: pg_storage::Storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" };
+    static MAPS_STORAGE: pg_storage::Storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" };
     let vault = Vault {
-        keys: &keys_storage,
-        data: &data_storage,
-        maps: &maps_storage
+        keys: &KEYS_STORAGE,
+        data: &DATA_STORAGE,
+        maps: &MAPS_STORAGE
     };
     let args: Args = Docopt::new(USAGE)
                             .and_then( |d| d.decode() )
