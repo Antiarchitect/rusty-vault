@@ -1,4 +1,5 @@
 use std::sync::mpsc::channel;
+use std::sync::Arc;
 use std::thread;
 use std::error::Error;
 use std::marker::{Sync, Send};
@@ -20,9 +21,9 @@ pub struct Vault<K, D, M>
         D: 'static + DataStorage + Sync + Send,
         M: 'static + MapsStorage + Sync + Send,
 {
-    pub keys: &'static K,
-    pub data: &'static D,
-    pub maps: &'static M
+    pub keys: Arc<K>,
+    pub data: Arc<D>,
+    pub maps: Arc<M>
 }
 
 impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage + Sync + Send> Vault<K, D, M> {
@@ -38,14 +39,14 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
 
         let storable = StorableKey { key: encrypted.key, iv: encrypted.iv };
         let key_tx = tx.clone();
-        let keys_storage = self.keys;
+        let keys_storage = self.keys.clone();
         thread::spawn(move || {
             key_tx.send(keys_storage.dump(&key_id.to_string(), storable).map_err(|e| e.to_string()))
         });
 
         let storable = StorableData { ciphertext: encrypted.ciphertext };
         let data_tx = tx.clone();
-        let data_storage = self.data;
+        let data_storage = self.data.clone();
         thread::spawn(move || {
             data_tx.send(data_storage.dump(&data_id.to_string(), storable).map_err(|e| e.to_string()))
         });
@@ -53,7 +54,7 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
         let storable = StorableMap { key_id: key_id, data_id: data_id, tag: encrypted.tag };
         let map_tx = tx.clone();
         let map_id = external_id.clone();
-        let maps_storage = self.maps;
+        let maps_storage = self.maps.clone();
         thread::spawn(move || {
             map_tx.send(maps_storage.dump(&map_id, storable).map_err(|e| e.to_string()))
         });
@@ -77,14 +78,14 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
 
         let (key_tx, key_rx) = channel();
         let id = map.key_id.to_string();
-        let keys_storage = self.keys;
+        let keys_storage = self.keys.clone();
         thread::spawn(move || {
             key_tx.send(keys_storage.load(&id).map_err(|e| e.to_string()))
         });
 
         let (data_tx, data_rx) = channel();
         let id = map.data_id.to_string();
-        let data_storage = self.data;
+        let data_storage = self.data.clone();
         thread::spawn(move || {
             data_tx.send(data_storage.load(&id).map_err(|e| e.to_string()))
         });
@@ -113,21 +114,21 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
 
         let map_tx = tx.clone();
         let id = external_id.clone();
-        let maps_storage = self.maps;
+        let maps_storage = self.maps.clone();
         thread::spawn(move || {
             map_tx.send(maps_storage.delete(&id).map_err(|e| e.to_string()))
         });
 
         let id = map.key_id.to_string();
         let key_tx = tx.clone();
-        let keys_storage = self.keys;
+        let keys_storage = self.keys.clone();
         thread::spawn(move || {
             key_tx.send(keys_storage.delete(&id).map_err(|e| e.to_string()))
         });
 
         let id = map.data_id.to_string();
         let data_tx = tx.clone();
-        let data_storage = self.data;
+        let data_storage = self.data.clone();
         thread::spawn(move || {
             data_tx.send(data_storage.delete(&id).map_err(|e| e.to_string()))
         });
