@@ -1,9 +1,9 @@
- extern crate docopt;
+extern crate docopt;
 extern crate rustc_serialize;
 extern crate rusty_vault;
 
 use docopt::Docopt;
-use rusty_vault;
+use rusty_vault::Vault;
 
 use rusty_vault::storages::filesystem as fs_storage;
 use rusty_vault::storages::postgresql as pg_storage;
@@ -30,44 +30,36 @@ struct Args {
 }
 
 fn main() {
+    let keys_storage = fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" };
+    let data_storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" };
+    let maps_storage = pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" };
     let vault = Vault {
-        keys: fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" },
-        maps: pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" },
-        data: pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" }
+        keys: &keys_storage,
+        data: &data_storage,
+        maps: &maps_storage
     };
     let args: Args = Docopt::new(USAGE)
                             .and_then( |d| d.decode() )
                             .unwrap_or_else( |e| e.exit() );
 
+    let external_id = args.arg_external_id;
     match args.arg_data_string {
-        Some(data) => dump(&vault, args.arg_external_id, data.into_bytes()),
+        Some(data) => match vault.dump(&external_id, data.into_bytes()) {
+            Ok(_) => println!("Object is successfully stored!"),
+            Err(error) => println!("An error has occurred: {}", error)
+        },
         None =>
             match args.flag_delete {
-                false => load(&vault, args.arg_external_id),
-                true => delete(&vault, args.arg_external_id)
+                false => match vault.load(&external_id) {
+                    Ok(Some(plaintext)) => println!("Data: {}", String::from_utf8(plaintext).unwrap()),
+                    Ok(None) => println!("Object {} was not found.", external_id),
+                    Err(error) => println!("An error has occurred: {}", error)
+                },
+                true => match vault.delete(&external_id) {
+                    Ok(Some(())) => println!("Object {} is successfully deleted!", external_id),
+                    Ok(None) => println!("Object {} was not found.", external_id),
+                    Err(error) => println!("An error has occurred: {}", error)
+                }
             }
-    }
-}
-
-fn dump(vault: &Vault, external_id: String, data: Vec<u8>) {
-    match vault::dump(&external_id, data) {
-        Ok(_) => println!("Object is successfully stored!"),
-        Err(error) => println!("An error has occurred: {}", error)
-    }
-}
-
-fn load(vault: &Vault, external_id: String) {
-    match vault::load(&external_id) {
-        Ok(Some(plaintext)) => println!("Data: {}", String::from_utf8(plaintext).unwrap()),
-        Ok(None) => println!("Object {} was not found.", external_id),
-        Err(error) => println!("An error has occurred: {}", error)
-    }
-}
-
-fn delete(vault: &Vault, external_id: String) {
-    match vault::delete(&external_id) {
-        Ok(Some(())) => println!("Object {} is successfully deleted!", external_id),
-        Ok(None) => println!("Object {} was not found.", external_id),
-        Err(error) => println!("An error has occurred: {}", error)
     }
 }

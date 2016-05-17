@@ -10,19 +10,19 @@ use uuid::Uuid;
 
 extern crate rustc_serialize;
 
-mod storages;
+pub mod storages;
 use storages::{StorableKey, StorableData, StorableMap};
 use storages::{KeysStorage, DataStorage, MapsStorage};
 
-struct Vault<K, D, M>
+pub struct Vault<K, D, M>
     where
         K: 'static + KeysStorage + Sync + Send,
         D: 'static + DataStorage + Sync + Send,
         M: 'static + MapsStorage + Sync + Send,
 {
-    keys: K,
-    data: D,
-    maps: M
+    pub keys: &'static K,
+    pub data: &'static D,
+    pub maps: &'static M
 }
 
 impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage + Sync + Send> Vault<K, D, M> {
