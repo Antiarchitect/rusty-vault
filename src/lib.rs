@@ -28,6 +28,10 @@ pub struct Vault<K, D, M>
 
 impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage + Sync + Send> Vault<K, D, M> {
 
+    pub fn new(keys: K, data: D, maps: M) -> Self {
+        Vault { keys: Arc::new(keys), data: Arc::new(data), maps: Arc::new(maps) }
+    }
+
     pub fn dump(&self, external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>> {
         try!(self.delete(external_id)); // To replace existing object we should remove the previous one.
 
