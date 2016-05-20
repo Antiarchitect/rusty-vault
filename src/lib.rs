@@ -1,13 +1,13 @@
+use std::error::Error;
+use std::marker::{Sync, Send};
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::thread;
-use std::error::Error;
-use std::marker::{Sync, Send};
-
-mod crypt;
 
 extern crate uuid;
 use uuid::Uuid;
+
+mod crypt;
 
 extern crate rustc_serialize;
 

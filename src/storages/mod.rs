@@ -24,10 +24,13 @@ pub struct StorableMap {
     pub tag: Box<[u8]>
 }
 
+pub type StorageResult<T> = Result<T, Box<Error>>;
+pub type StorageResultOption<T> = StorageResult<Option<T>>;
+
 pub trait BaseStorage {
-    fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>>;
-    fn load<T: Decodable>(&self, id: &String) -> Result<Option<T>, Box<Error>>;
-    fn delete(&self, id: &String) -> Result<Option<()>, Box<Error>>;
+    fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()>;
+    fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T>;
+    fn delete(&self, id: &String) -> StorageResultOption<()>;
 }
 
 pub trait MapsStorage: BaseStorage {}

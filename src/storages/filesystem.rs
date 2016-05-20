@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::io::prelude::*;
 use std::fs;
 use std::path;
@@ -6,13 +5,16 @@ use std::path;
 use rustc_serialize::json;
 use rustc_serialize::{Decodable, Encodable};
 
+use super::StorageResult;
+use super::StorageResultOption;
+
 pub struct Storage {
     pub path: &'static str
 }
 
 impl Storage {
 
-    fn ensure_storage_path(&self, key: &String) -> Result<path::PathBuf, Box<Error>> {
+    fn ensure_storage_path(&self, key: &String) -> StorageResult<path::PathBuf> {
         let mut path = path::PathBuf::from(self.path);
         path.push(key);
         path.push(key[0..2].to_string());
@@ -28,21 +30,21 @@ impl Storage {
 
 impl super::BaseStorage for Storage {
 
-    fn dump<T: Encodable>(&self, id: &String, storable: T) -> Result<(), Box<Error>> {
+    fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
         let path = try!(self.ensure_storage_path(id));
         let mut storage = try!(fs::File::create(&path));
         try!(storage.write_all(json::encode(&storable).unwrap().as_bytes()));
         Ok(())
     }
 
-    fn delete(&self, id: &String) -> Result<Option<()>, Box<Error>> {
+    fn delete(&self, id: &String) -> StorageResultOption<()> {
         let path = try!(self.ensure_storage_path(id));
         if !(path.exists()) { return Ok(None) };
         try!(fs::remove_file(path));
         Ok(Some(()))
     }
 
-    fn load<T: Decodable>(&self, id: &String) -> Result<Option<T>, Box<Error>> {
+    fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T> {
         let path = try!(self.ensure_storage_path(id));
         if !(path.exists()) { return Ok(None) };
         let mut storage = try!(fs::File::open(&path));
