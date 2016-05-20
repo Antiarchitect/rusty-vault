@@ -15,6 +15,9 @@ pub mod storages;
 use storages::{StorableKey, StorableData, StorableMap};
 use storages::{KeysStorage, DataStorage, MapsStorage};
 
+pub type VaultResult<T> = Result<T, Box<Error>>;
+pub type VaultResultOption<T> = VaultResult<Option<T>>;
+
 pub struct Vault<K, D, M>
     where
         K: 'static + KeysStorage + Sync + Send,
@@ -32,7 +35,7 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
         Vault { keys: Arc::new(keys), data: Arc::new(data), maps: Arc::new(maps) }
     }
 
-    pub fn dump(&self, external_id: &String, data: Vec<u8>) -> Result<(), Box<Error>> {
+    pub fn dump(&self, external_id: &String, data: Vec<u8>) -> VaultResult<()> {
         try!(self.delete(external_id)); // To replace existing object we should remove the previous one.
 
         let encrypted = crypt::encrypt(external_id.as_bytes(), &data);
@@ -74,7 +77,7 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
         Ok(())
     }
 
-    pub fn load(&self, external_id: &String) -> Result<Option<Vec<u8>>, Box<Error>> {
+    pub fn load(&self, external_id: &String) -> VaultResultOption<Vec<u8>> {
         let map: storages::StorableMap = match try!(self.maps.load(external_id)) {
             Some(value) => value,
             None => return Ok(None)
@@ -108,7 +111,7 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
         Ok(Some(result.plaintext))
     }
 
-    pub fn delete(&self, external_id: &String) -> Result<Option<()>, Box<Error>> {
+    pub fn delete(&self, external_id: &String) -> VaultResultOption<()> {
         let map: storages::StorableMap = match try!(self.maps.load(external_id)) {
             Some(value) => value,
             None => return Ok(None)

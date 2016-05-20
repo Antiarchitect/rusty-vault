@@ -10,10 +10,6 @@ pub struct Storage {
     pub path: &'static str
 }
 
-impl super::MapsStorage for Storage {}
-impl super::KeysStorage for Storage {}
-impl super::DataStorage for Storage {}
-
 impl Storage {
 
     fn ensure_storage_path(&self, key: &String) -> Result<path::PathBuf, Box<Error>> {
@@ -55,3 +51,7 @@ impl super::BaseStorage for Storage {
         Ok(Some(try!(json::decode(&string))))
     }
 }
+
+impl super::KeysStorage for Storage {}
+impl super::DataStorage for Storage {}
+impl super::MapsStorage for Storage {}

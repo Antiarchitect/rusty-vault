@@ -14,10 +14,6 @@ pub struct Storage {
     pub table_name: &'static str
 }
 
-impl super::MapsStorage for Storage {}
-impl super::KeysStorage for Storage {}
-impl super::DataStorage for Storage {}
-
 impl Storage {
 
     fn ensure_connection(&self) -> Result<Connection, Box<Error>> {
@@ -57,3 +53,7 @@ impl super::BaseStorage for Storage {
     }
 
 }
+
+impl super::KeysStorage for Storage {}
+impl super::DataStorage for Storage {}
+impl super::MapsStorage for Storage {}
