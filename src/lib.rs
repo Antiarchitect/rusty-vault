@@ -4,14 +4,15 @@ use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::thread;
 
+extern crate rustc_serialize;
 extern crate uuid;
 use uuid::Uuid;
 
 mod crypt;
+pub mod config;
+use config::Config;
 
-extern crate rustc_serialize;
-
-pub mod storages;
+mod storages;
 use storages::{StorableKey, StorableData, StorableMap};
 use storages::{KeysStorage, DataStorage, MapsStorage};
 
@@ -33,6 +34,13 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
 
     pub fn new(keys: K, data: D, maps: M) -> Self {
         Vault { keys: Arc::new(keys), data: Arc::new(data), maps: Arc::new(maps) }
+    }
+
+    pub fn from_config(config: &Config) -> Self {
+        let keys = KeysStorage::from_config(config.keys);
+        let data = DataStorage::from_config(config.data);
+        let maps = MapsStorage::from_config(config.maps);
+        Vault::new(keys, data, maps)
     }
 
     pub fn dump(&self, external_id: &String, data: Vec<u8>) -> VaultResult<()> {

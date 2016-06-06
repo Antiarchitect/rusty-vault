@@ -27,6 +27,7 @@ pub struct StorableMap {
 pub type StorageResult<T> = Result<T, Box<Error>>;
 pub type StorageResultOption<T> = StorageResult<Option<T>>;
 
+pub trait Config {}
 pub trait BaseStorage {
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()>;
     fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T>;

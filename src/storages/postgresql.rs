@@ -10,15 +10,25 @@ use uuid::Uuid;
 use super::StorageResult;
 use super::StorageResultOption;
 
+pub struct Config {
+    pub connection_url: String,
+    pub table_name: String
+}
+impl super::Config for Config {}
+
 pub struct Storage {
-    pub connection_url: &'static str,
-    pub table_name: &'static str
+    pub connection_url: String,
+    pub table_name: String
 }
 
 impl Storage {
 
+    pub fn from_config(config: Config) -> Self {
+        Storage { connection_url: config.connection_url, table_name: config.table_name }
+    }
+
     fn ensure_connection(&self) -> StorageResult<Connection> {
-        let connection = try!(Connection::connect(self.connection_url, SslMode::None));
+        let connection = try!(Connection::connect(&self.connection_url[..], SslMode::None));
         try!(connection.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA public", &[]));
         try!(connection.execute(&format!(
             "CREATE TABLE IF NOT EXISTS {} (

@@ -8,11 +8,20 @@ use rustc_serialize::{Decodable, Encodable};
 use super::StorageResult;
 use super::StorageResultOption;
 
+pub struct Config {
+    pub path: String
+}
+impl super::Config for Config {}
+
 pub struct Storage {
-    pub path: &'static str
+    pub path: String
 }
 
 impl Storage {
+
+    pub fn from_config(config: Config) -> Self {
+        Storage { path: config.path }
+    }
 
     fn ensure_storage_path(&self, key: &String) -> StorageResult<path::PathBuf> {
         let mut path = path::PathBuf::from(self.path);

@@ -5,39 +5,41 @@ extern crate rusty_vault;
 use docopt::Docopt;
 use rusty_vault::Vault;
 
-use rusty_vault::storages::filesystem as fs_storage;
-use rusty_vault::storages::postgresql as pg_storage;
+use rusty_vault::config::Config;
 
 const USAGE: &'static str = "
 Rusty Vault.
 
 Usage:
-  rusty_vault <external-id> <data-string>
-  rusty_vault <external-id> [--delete]
+  rusty_vault --config=<config> <external-id> <data-string>
+  rusty_vault --config=<config> <external-id> [--delete]
   rusty_vault --version
 
 Options:
-  -h --help     Show this screen.
-  --version     Show version.
-  --delete -d   Delete object.
+  -h --help         Show this screen.
+  --config=<config> Path to the config file.
+  --version         Show version.
+  --delete -d       Delete object.
 ";
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
     arg_external_id: String,
     arg_data_string: Option<String>,
-    flag_delete: bool
+    flag_delete: bool,
+    flag_config: String
 }
 
 fn main() {
-    let vault = Vault::new(
-        fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" },
-        pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" },
-        pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" }
-    );
-    let args: Args = Docopt::new(USAGE)
-                            .and_then( |d| d.decode() )
-                            .unwrap_or_else( |e| e.exit() );
+    let args: Args = Docopt::new(USAGE).and_then( |d| d.decode() ).unwrap_or_else( |e| e.exit() );
+    let config = Config::from_yaml_file(args.flag_config);
+    let vault = Vault::from_config(&config);
+
+//    let vault = Vault::new(
+//        fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" },
+//        pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" },
+//        pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" }
+//    );
 
     let external_id = args.arg_external_id;
     match args.arg_data_string {
