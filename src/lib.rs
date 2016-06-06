@@ -37,9 +37,9 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
     }
 
     pub fn from_config(config: &Config) -> Self {
-        let keys = KeysStorage::from_config(config.keys);
-        let data = DataStorage::from_config(config.data);
-        let maps = MapsStorage::from_config(config.maps);
+        let keys = KeysStorage::from_config(&config.keys);
+        let data = DataStorage::from_config(&config.data);
+        let maps = MapsStorage::from_config(&config.maps);
         Vault::new(keys, data, maps)
     }
 

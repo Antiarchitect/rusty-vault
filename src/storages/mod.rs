@@ -2,6 +2,7 @@ pub mod filesystem;
 pub mod postgresql;
 
 use std::error::Error;
+use std::marker::Sized;
 
 use uuid::Uuid;
 use rustc_serialize::{Decodable, Encodable};
@@ -29,6 +30,7 @@ pub type StorageResultOption<T> = StorageResult<Option<T>>;
 
 pub trait Config {}
 pub trait BaseStorage {
+    fn from_config(config: &Config) -> Self where Self: Sized { Self::from_config(config) }
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()>;
     fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T>;
     fn delete(&self, id: &String) -> StorageResultOption<()>;

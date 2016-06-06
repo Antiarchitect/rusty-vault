@@ -23,7 +23,7 @@ pub struct Storage {
 
 impl Storage {
 
-    pub fn from_config(config: Config) -> Self {
+    pub fn from_config(config: &Config) -> Self {
         Storage { connection_url: config.connection_url, table_name: config.table_name }
     }
 
