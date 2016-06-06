@@ -9,7 +9,7 @@ use super::StorageResult;
 use super::StorageResultOption;
 
 pub struct Config {
-    pub path: String
+    path: String
 }
 impl super::Config for Config {}
 
@@ -18,10 +18,6 @@ pub struct Storage {
 }
 
 impl Storage {
-
-    pub fn from_config(config: Config) -> Self {
-        Storage { path: config.path }
-    }
 
     fn ensure_storage_path(&self, key: &String) -> StorageResult<path::PathBuf> {
         let mut path = path::PathBuf::from(self.path);
@@ -38,6 +34,11 @@ impl Storage {
 }
 
 impl super::BaseStorage for Storage {
+    type ConfigStruct = Config;
+
+    pub fn from_config(config: &Config) -> Self {
+        Storage { path: config.path }
+    }
 
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
         let path = try!(self.ensure_storage_path(id));

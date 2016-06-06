@@ -11,21 +11,16 @@ use super::StorageResult;
 use super::StorageResultOption;
 
 pub struct Config {
-    pub connection_url: String,
-    pub table_name: String
+    connection_url: String,
+    table_name: String
 }
 impl super::Config for Config {}
-
 pub struct Storage {
     pub connection_url: String,
     pub table_name: String
 }
 
 impl Storage {
-
-    pub fn from_config(config: &Config) -> Self {
-        Storage { connection_url: config.connection_url, table_name: config.table_name }
-    }
 
     fn ensure_connection(&self) -> StorageResult<Connection> {
         let connection = try!(Connection::connect(&self.connection_url[..], SslMode::None));
@@ -41,6 +36,11 @@ impl Storage {
 }
 
 impl super::BaseStorage for Storage {
+    type ConfigStruct = Config;
+
+    pub fn from_config(config: &Config) -> Self {
+        Storage { connection_url: config.connection_url, table_name: config.table_name }
+    }
 
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
         let json: json::Json = try!(json::Json::from_str(&try!(json::encode(&storable))));

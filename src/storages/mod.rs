@@ -29,13 +29,22 @@ pub type StorageResult<T> = Result<T, Box<Error>>;
 pub type StorageResultOption<T> = StorageResult<Option<T>>;
 
 pub trait Config {}
+pub trait FsConfig {
+    fn path(self) -> String;
+}
+pub trait PgConfig {
+    fn connection_url(self) -> String;
+    fn table_name(self) -> String;
+}
+
 pub trait BaseStorage {
-    fn from_config(config: &Config) -> Self where Self: Sized { Self::from_config(config) }
+    type ConfigStruct: Sized;
+
+    fn from_config(config: &Self::ConfigStruct) -> Self;
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()>;
     fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T>;
     fn delete(&self, id: &String) -> StorageResultOption<()>;
 }
-
 pub trait MapsStorage: BaseStorage {}
 pub trait KeysStorage: BaseStorage {}
 pub trait DataStorage: BaseStorage {}
