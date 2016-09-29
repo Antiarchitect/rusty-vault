@@ -38,9 +38,6 @@ pub trait PgConfig {
 }
 
 pub trait BaseStorage {
-    type ConfigStruct: Sized;
-
-    fn from_config(config: &Self::ConfigStruct) -> Self;
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()>;
     fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T>;
     fn delete(&self, id: &String) -> StorageResultOption<()>;

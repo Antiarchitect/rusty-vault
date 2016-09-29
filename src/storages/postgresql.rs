@@ -22,6 +22,10 @@ pub struct Storage {
 
 impl Storage {
 
+    fn from_config(config: &super::PgConfig) -> Self {
+        Storage { connection_url: config.connection_url(), table_name: config.table_name() }
+    }
+
     fn ensure_connection(&self) -> StorageResult<Connection> {
         let connection = try!(Connection::connect(&self.connection_url[..], SslMode::None));
         try!(connection.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\" WITH SCHEMA public", &[]));
@@ -36,11 +40,6 @@ impl Storage {
 }
 
 impl super::BaseStorage for Storage {
-    type ConfigStruct = Config;
-
-    pub fn from_config(config: &Config) -> Self {
-        Storage { connection_url: config.connection_url, table_name: config.table_name }
-    }
 
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
         let json: json::Json = try!(json::Json::from_str(&try!(json::encode(&storable))));

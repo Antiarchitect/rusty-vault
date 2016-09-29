@@ -19,6 +19,10 @@ pub struct Storage {
 
 impl Storage {
 
+    fn from_config(config: &super::FsConfig) -> Self {
+        Storage { path: config.path() }
+    }
+
     fn ensure_storage_path(&self, key: &String) -> StorageResult<path::PathBuf> {
         let mut path = path::PathBuf::from(self.path);
         path.push(key);
@@ -34,11 +38,6 @@ impl Storage {
 }
 
 impl super::BaseStorage for Storage {
-    type ConfigStruct = Config;
-
-    pub fn from_config(config: &Config) -> Self {
-        Storage { path: config.path }
-    }
 
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
         let path = try!(self.ensure_storage_path(id));
