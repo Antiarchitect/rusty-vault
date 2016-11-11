@@ -29,13 +29,6 @@ pub type StorageResult<T> = Result<T, Box<Error>>;
 pub type StorageResultOption<T> = StorageResult<Option<T>>;
 
 pub trait Config {}
-pub trait FsConfig {
-    fn path(self) -> String;
-}
-pub trait PgConfig {
-    fn connection_url(self) -> String;
-    fn table_name(self) -> String;
-}
 
 pub trait BaseStorage {
     fn from_config<T: Config>(&self, config: &T) -> Self;

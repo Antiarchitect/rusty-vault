@@ -8,10 +8,19 @@ use rustc_serialize::{Decodable, Encodable};
 use super::StorageResult;
 use super::StorageResultOption;
 
+pub trait FsConfig: super::Config {
+    fn path(&self) -> String;
+}
+
 pub struct Config {
     path: String
 }
+
 impl super::Config for Config {}
+
+impl FsConfig for Config {
+    fn path(&self) -> String { self.path }
+}
 
 pub struct Storage {
     pub path: String
@@ -35,7 +44,7 @@ impl Storage {
 
 impl super::BaseStorage for Storage {
 
-    fn from_config<T: super::FsConfig>(&self, config: &T) -> Storage {
+    fn from_config<T: super::Config>(&self, config: &T) -> Storage {
         Storage { path: config.path() }
     }
 

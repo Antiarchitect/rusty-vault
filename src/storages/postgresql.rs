@@ -14,7 +14,19 @@ pub struct Config {
     connection_url: String,
     table_name: String
 }
+
+pub trait PgConfig: super::Config {
+    fn connection_url(&self) -> String;
+    fn table_name(&self) -> String;
+}
+
 impl super::Config for Config {}
+
+impl PgConfig for Config {
+    fn connection_url(&self) -> String { self.connection_url }
+    fn table_name(&self) -> String { self.table_name }
+}
+
 pub struct Storage {
     pub connection_url: String,
     pub table_name: String
@@ -37,7 +49,7 @@ impl Storage {
 
 impl super::BaseStorage for Storage {
 
-    fn from_config<T: super::PgConfig>(&self, config: &T) -> Storage {
+    fn from_config<T: super::Config>(&self, config: &T) -> Storage {
         Storage { connection_url: config.connection_url(), table_name: config.table_name() }
     }
 
