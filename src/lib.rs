@@ -36,7 +36,7 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
     }
 
     pub fn dump(&self, external_id: &String, data: Vec<u8>) -> VaultResult<()> {
-        try!(self.delete(external_id)); // To replace existing object we should remove the previous one.
+        self.delete(external_id)?; // To replace existing object we should remove the previous one.
 
         let encrypted = crypt::encrypt(external_id.as_bytes(), &data);
         let key_id = Uuid::new_v4();
@@ -78,7 +78,7 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
     }
 
     pub fn load(&self, external_id: &String) -> VaultResultOption<Vec<u8>> {
-        let map: storages::StorableMap = match try!(self.maps.load(external_id)) {
+        let map: storages::StorableMap = match self.maps.load(external_id)? {
             Some(value) => value,
             None => return Ok(None)
         };
@@ -97,11 +97,11 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
             data_tx.send(data_storage.load(&id).map_err(|e| e.to_string()))
         });
 
-        let key: StorableKey = match try!(key_rx.recv().unwrap()) {
+        let key: StorableKey = match key_rx.recv().unwrap()? {
             Some(value) => value,
             None => return Err(From::from("Key was not found."))
         };
-        let data: StorableData = match try!(data_rx.recv().unwrap()) {
+        let data: StorableData = match data_rx.recv().unwrap()? {
             Some(value) => value,
             None => return Err(From::from("Data was not found."))
         };
@@ -112,7 +112,7 @@ impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage 
     }
 
     pub fn delete(&self, external_id: &String) -> VaultResultOption<()> {
-        let map: storages::StorableMap = match try!(self.maps.load(external_id)) {
+        let map: storages::StorableMap = match self.maps.load(external_id)? {
             Some(value) => value,
             None => return Ok(None)
         };

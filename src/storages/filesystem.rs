@@ -20,7 +20,7 @@ impl Storage {
         path.push(key[0..2].to_string());
         path.push(key[2..4].to_string());
         path.push(key[4..6].to_string());
-        try!(fs::create_dir_all(&path));
+        fs::create_dir_all(&path)?;
         path.push(key);
         path.set_extension("json");
         Ok(path)
@@ -31,26 +31,26 @@ impl Storage {
 impl super::BaseStorage for Storage {
 
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
-        let path = try!(self.ensure_storage_path(id));
-        let mut storage = try!(fs::File::create(&path));
-        try!(storage.write_all(json::encode(&storable).unwrap().as_bytes()));
+        let path = self.ensure_storage_path(id)?;
+        let mut storage = fs::File::create(&path)?;
+        storage.write_all(json::encode(&storable).unwrap().as_bytes())?;
         Ok(())
     }
 
     fn delete(&self, id: &String) -> StorageResultOption<()> {
-        let path = try!(self.ensure_storage_path(id));
+        let path = self.ensure_storage_path(id)?;
         if !(path.exists()) { return Ok(None) };
-        try!(fs::remove_file(path));
+        fs::remove_file(path)?;
         Ok(Some(()))
     }
 
     fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T> {
-        let path = try!(self.ensure_storage_path(id));
+        let path = self.ensure_storage_path(id)?;
         if !(path.exists()) { return Ok(None) };
-        let mut storage = try!(fs::File::open(&path));
+        let mut storage = fs::File::open(&path)?;
         let mut string = String::new();
-        try!(storage.read_to_string(&mut string));
-        Ok(Some(try!(json::decode(&string))))
+        storage.read_to_string(&mut string)?;
+        Ok(Some(json::decode(&string)?))
     }
 }
 
