@@ -3,6 +3,7 @@ use rustc_serialize::{Decodable, Encodable};
 
 extern crate postgres;
 
+use uuid::Uuid;
 use self::postgres::{Connection, TlsMode};
 
 use super::VaultStorage;
@@ -33,18 +34,18 @@ impl VaultStorage for Storage {
 
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
         let json: json::Json = json::Json::from_str(&json::encode(&storable)?)?;
-        self.ensure_connection().ok().unwrap().execute(&format!("INSERT INTO {} (id, data) VALUES ($1, $2)", &self.table_name), &[&id, &json])?;
+        self.ensure_connection().ok().unwrap().execute(&format!("INSERT INTO {} (id, data) VALUES ($1, $2)", &self.table_name), &[&Uuid::parse_str(id)?, &json])?;
         Ok(())
     }
 
     fn delete(&self, id: &String) -> StorageResultOption<()> {
-        self.ensure_connection().ok().unwrap().execute(&format!("DELETE FROM {} WHERE id = $1", &self.table_name), &[&id])?;
+        self.ensure_connection().ok().unwrap().execute(&format!("DELETE FROM {} WHERE id = $1", &self.table_name), &[&Uuid::parse_str(id)?])?;
         Ok(Some(()))
     }
 
     fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T> {
         let connection = self.ensure_connection().ok().unwrap();
-        for row in &connection.query(&format!("SELECT id, data FROM {} WHERE id = $1", &self.table_name), &[&id])? {
+        for row in &connection.query(&format!("SELECT id, data FROM {} WHERE id = $1", &self.table_name), &[&Uuid::parse_str(id)?])? {
             let json: json::Json = row.get(1);
             let data: T = json::decode(&json.to_string())?;
             return Ok(Some(data))
