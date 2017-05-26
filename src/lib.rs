@@ -13,23 +13,23 @@ extern crate rustc_serialize;
 
 pub mod storages;
 use storages::{StorableKey, StorableData, StorableMap};
-use storages::{KeysStorage, DataStorage, MapsStorage};
+use storages::VaultStorage;
 
 pub type VaultResult<T> = Result<T, Box<Error>>;
 pub type VaultResultOption<T> = VaultResult<Option<T>>;
 
 pub struct Vault<K, D, M>
     where
-        K: 'static + KeysStorage + Sync + Send,
-        D: 'static + DataStorage + Sync + Send,
-        M: 'static + MapsStorage + Sync + Send,
+        K: 'static + VaultStorage + Sync + Send,
+        D: 'static + VaultStorage + Sync + Send,
+        M: 'static + VaultStorage + Sync + Send
 {
     pub keys: Arc<K>,
     pub data: Arc<D>,
     pub maps: Arc<M>
 }
 
-impl<K: KeysStorage + Sync + Send, D: DataStorage + Sync + Send, M: MapsStorage + Sync + Send> Vault<K, D, M> {
+impl<K: VaultStorage + Sync + Send, D: VaultStorage + Sync + Send, M: VaultStorage + Sync + Send> Vault<K, D, M> {
 
     pub fn new(keys: K, data: D, maps: M) -> Self {
         Vault { keys: Arc::new(keys), data: Arc::new(data), maps: Arc::new(maps) }

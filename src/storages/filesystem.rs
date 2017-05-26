@@ -5,6 +5,7 @@ use std::path;
 use rustc_serialize::json;
 use rustc_serialize::{Decodable, Encodable};
 
+use super::VaultStorage;
 use super::StorageResult;
 use super::StorageResultOption;
 
@@ -28,7 +29,7 @@ impl Storage {
 
 }
 
-impl super::BaseStorage for Storage {
+impl VaultStorage for Storage {
 
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()> {
         let path = self.ensure_storage_path(id)?;
@@ -53,7 +54,3 @@ impl super::BaseStorage for Storage {
         Ok(Some(json::decode(&string)?))
     }
 }
-
-impl super::KeysStorage for Storage {}
-impl super::DataStorage for Storage {}
-impl super::MapsStorage for Storage {}

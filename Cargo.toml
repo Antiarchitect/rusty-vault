@@ -5,8 +5,8 @@ authors = ["Andrey Voronkov <voronkovaa@gmail.com>"]
 
 [dependencies]
 docopt = "*"
-postgres = { version = "0.11", features = ["uuid", "rustc-serialize"] }
+postgres = { version = "0.14", features = ["with-uuid", "with-rustc-serialize"] }
 rust-crypto = "*"
 rand = "*"
 rustc-serialize = "*"
-uuid = { version = "0.2.2", features = ["rustc-serialize", "v4"] }
+uuid = { version = "0.5", features = ["rustc-serialize", "v4"] }

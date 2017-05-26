@@ -27,12 +27,8 @@ pub struct StorableMap {
 pub type StorageResult<T> = Result<T, Box<Error>>;
 pub type StorageResultOption<T> = StorageResult<Option<T>>;
 
-pub trait BaseStorage {
+pub trait VaultStorage {
     fn dump<T: Encodable>(&self, id: &String, storable: T) -> StorageResult<()>;
     fn load<T: Decodable>(&self, id: &String) -> StorageResultOption<T>;
     fn delete(&self, id: &String) -> StorageResultOption<()>;
 }
-
-pub trait MapsStorage: BaseStorage {}
-pub trait KeysStorage: BaseStorage {}
-pub trait DataStorage: BaseStorage {}
