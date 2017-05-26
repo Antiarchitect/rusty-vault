@@ -17,7 +17,6 @@ impl Storage {
 
     fn ensure_storage_path(&self, key: &String) -> StorageResult<path::PathBuf> {
         let mut path = path::PathBuf::from(self.path);
-        path.push(key);
         path.push(key[0..2].to_string());
         path.push(key[2..4].to_string());
         path.push(key[4..6].to_string());
