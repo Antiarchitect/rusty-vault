@@ -1,52 +1,53 @@
-extern crate docopt;
 extern crate rustc_serialize;
+
+extern crate structopt;
+#[macro_use] extern crate structopt_derive;
+use structopt::StructOpt;
+
 extern crate rusty_vault;
-
-use docopt::Docopt;
 use rusty_vault::Vault;
+use rusty_vault::storages::filesystem as storage_fs;
+//use rusty_vault::storages::postgresql as storage_pg;
 
-use rusty_vault::storages::filesystem as fs_storage;
-use rusty_vault::storages::postgresql as pg_storage;
+#[derive(StructOpt, Debug)]
+#[structopt(name = "rusty-vault", about = "Rusty Vault CLI usage.")]
+struct Cli {
+    /// External Identifier of the (future) encrypted object
+    #[structopt(help = "External Identifier of the (future) encrypted object")]
+    external_id: String,
 
-const USAGE: &'static str = "
-Rusty Vault.
+    /// Data string to be encrypted
+    #[structopt(help = "Data string to be encrypted")]
+    data_string: Option<String>,
 
-Usage:
-  rusty_vault <external-id> <data-string>
-  rusty_vault <external-id> [--delete]
-  rusty_vault --version
-
-Options:
-  -h --help     Show this screen.
-  --version     Show version.
-  --delete -d   Delete object.
-";
-
-#[derive(Debug, RustcDecodable)]
-struct Args {
-    arg_external_id: String,
-    arg_data_string: Option<String>,
-    flag_delete: bool
+    /// Option to delete object by its external_id
+    #[structopt(long = "delete", short = "d")]
+    delete: bool
 }
 
 fn main() {
-    let vault = Vault::new(
-        fs_storage::Storage { path: "/home/andrey/Documents/storages/keys" },
-        pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" },
-        pg_storage::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" }
-    );
-    let args: Args = Docopt::new(USAGE)
-                            .and_then( |d| d.decode() )
-                            .unwrap_or_else( |e| e.exit() );
+    let args = Cli::from_args();
 
-    let external_id = args.arg_external_id;
-    match args.arg_data_string {
+//    let vault = Vault::new(
+//        storage_fs::Storage { path: "/home/andrey/Documents/storages/keys" },
+//        storage_pg::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_data", table_name: "data" },
+//        storage_pg::Storage { connection_url: "postgresql://medm:password@localhost/rusty_vault_maps", table_name: "maps" }
+//    );
+
+    let vault = Vault::new(
+        storage_fs::Storage { path: "~/Documents/storages/keys" },
+        storage_fs::Storage { path: "~/Documents/storages/data" },
+        storage_fs::Storage { path: "~/Documents/storages/maps" },
+    );
+
+    let external_id = args.external_id;
+    match args.data_string {
         Some(data) => match vault.dump(&external_id, data.into_bytes()) {
             Ok(_) => println!("Object is successfully stored!"),
             Err(error) => println!("An error has occurred: {}", error)
         },
         None =>
-            match args.flag_delete {
+            match args.delete {
                 false => match vault.load(&external_id) {
                     Ok(Some(plaintext)) => println!("Data: {}", String::from_utf8(plaintext).unwrap()),
                     Ok(None) => println!("Object {} was not found.", external_id),

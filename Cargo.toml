@@ -1,10 +1,11 @@
 [package]
 name = "rusty-vault"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Andrey Voronkov <voronkovaa@gmail.com>"]
 
 [dependencies]
-docopt = "*"
+structopt = "0.1"
+structopt-derive = "0.1"
 postgres = { version = "0.14", features = ["with-uuid", "with-rustc-serialize"] }
 rust-crypto = "*"
 rand = "*"
